@@ -1,7 +1,7 @@
 import argparse
 import random
 import numpy as np
-
+from environment.utils import compare_results
 from environment.rugby_env import RugbyEnv
 
 from agents.random_agent import RandomAgent
@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
   parser = argparse.ArgumentParser()
 
-  parser.add_argument("--episodes", type=int, default=100)
+  parser.add_argument("--episodes", type=int, default=1)
   parser.add_argument("--n_agents", type=int, default=7)
   parser.add_argument("--n_opponents", type=int, default=7)
   opt = parser.parse_args()
@@ -79,8 +79,6 @@ if __name__ == '__main__':
      ]
   }
 
-
-
   # Evaluate teams
   results = {}
   for team, agents in teams.items():
@@ -88,7 +86,7 @@ if __name__ == '__main__':
       result = run_multi_agent(env, agents, opt.episodes)
       results[team] = result
 
-  print(results)
+  compare_results(results, title="Random Team VS Random Team Performance", colors=["orange"])
 
   # 4 - Compare results
   # compare_results(

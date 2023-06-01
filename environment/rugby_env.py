@@ -1,5 +1,6 @@
 import copy
 import logging
+import math
 import time
 
 import numpy as np
@@ -160,7 +161,7 @@ class RugbyEnv(gym.Env):
             observation = self.__get_observation(OPPONENT_TEAM, opponent_i)
             observations.append(observation)
 
-        # time.sleep(0.5) 
+        #time.sleep(1)
         self.print_field()
         print("\n")
         print("Score: " + self._team_scores.__str__())
@@ -353,6 +354,51 @@ class RugbyEnv(gym.Env):
         # render the game state
         # ...
         pass
+
+    # TODO: Falta organizar que ou queremos só agentes que estão à frente do nosso ou atrás
+    def find_nearest_agents(my_position, agent_positions, number_of_agents=2):
+        """
+        Calculates the number of agents that are nearest to my position
+
+        Args:
+            my_position (tuple): The agent that wants to get the nearest agents
+            agent_positions list[tuple]: position of the each agent in the list
+            number_of_agents (int): The number of agents that we want
+
+        Returns:
+            list[tuple]: The positions of the agents that are nearer
+        """
+        distances = []  # List to store the distances between agents and you
+
+        # Calculate the distance between your position and each agent position
+        for agent_position in agent_positions:
+            distance = math.sqrt((agent_position[0] - my_position[0]) ** 2 + (agent_position[1] - my_position[1]) ** 2)
+            distances.append(distance)
+
+        # Find the indices of the two agents with the smallest distances
+        nearest_indices = sorted(range(len(distances)), key=lambda x: distances[x])[:number_of_agents]
+
+        # Get the positions of the two nearest agents
+        nearest_agents = [agent_positions[i] for i in nearest_indices]
+
+        return nearest_agents
+
+    def calculate_angle(my_position, agent1_position, agent2_position):
+        """
+        Calculate the angles between you and two agents.
+
+        Args:
+            my_position (tuple): Your position as a tuple of (x, y) coordinates.
+            agent1_position (tuple): The position of the first agent as a tuple of (x, y) coordinates.
+            agent2_position (tuple): The position of the second agent as a tuple of (x, y) coordinates.
+
+        Returns:
+            tuple: The angles between you and the two agents in degrees.
+        """
+        angle1 = math.degrees(math.atan2(agent1_position[1] - my_position[1], agent1_position[0] - my_position[0]))
+        angle2 = math.degrees(math.atan2(agent2_position[1] - my_position[1], agent2_position[0] - my_position[0]))
+
+        return angle1, angle2
 
 AGENT_COLOR = ImageColor.getcolor('blue', mode='RGB')
 AGENT_NEIGHBORHOOD_COLOR = (186, 238, 247)
