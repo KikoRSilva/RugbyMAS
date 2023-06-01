@@ -3,7 +3,8 @@ import random
 import numpy as np
 
 from environment.rugby_env import RugbyEnv
-from environment.agent import Agent
+
+from agents.random_agent import RandomAgent
 
 ROLES = 5
 BALL_CARRIER, ATTACKER, TACKLER, FORWARD_DEFENSE, BACK_DEFENSE = range(ROLES)
@@ -32,24 +33,6 @@ def run_multi_agent(environment, agents, n_episodes):
     environment.close()
 
   return results
-
-class RandomAgent(Agent):
-
-    def __init__(self, id: int, n_actions: int, n_agents: int):
-        super(RandomAgent, self).__init__("Random Agent")
-        self.id = id
-        self.n_agents = n_agents
-        self.n_actions = n_actions
-
-    def action(self) -> tuple:
-        a = np.random.randint(self.n_actions)
-        if a == 5:
-            # pass the ball
-            ag = np.random.randint(self.n_agents) 
-            while ag == self.id:
-               ag = np.random.randint(self.n_agents)
-            return (0, ag)
-        return (a, None)
   
 
 
