@@ -48,7 +48,7 @@ class RandomAgent(Agent):
             ag = np.random.randint(self.n_agents) 
             while ag == self.id:
                ag = np.random.randint(self.n_agents)
-            return (a, ag)
+            return (0, ag)
         return (a, None)
   
 
@@ -63,11 +63,11 @@ if __name__ == '__main__':
   opt = parser.parse_args()
 
   # Setup the environment
-  env = RugbyEnv(grid_shape=(21,11), n_agents=opt.n_agents, n_opponents=opt.n_opponents, max_steps=100)
+  env = RugbyEnv(grid_shape=(21,11), n_agents=opt.n_agents, n_opponents=opt.n_opponents, max_steps=10000)
 
   # Set seeds.
   random.seed(3)
-  np.random.seed(5)
+  np.random.seed(3)
   env.seed(3)
 
   # Setup the teams
