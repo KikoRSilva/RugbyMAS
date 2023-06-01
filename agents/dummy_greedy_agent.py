@@ -1,6 +1,6 @@
 import numpy as np
 
-from base_agent import Agent
+from .base_agent import Agent
 
 class DummyGreedyAgent(Agent):
 
