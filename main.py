@@ -63,7 +63,7 @@ if __name__ == '__main__':
   opt = parser.parse_args()
 
   # Setup the environment
-  env = RugbyEnv(grid_shape=(21,11), n_agents=opt.n_agents, n_opponents=opt.n_opponents, max_steps=10000)
+  env = RugbyEnv(grid_shape=(21,11), n_agents=opt.n_agents, n_opponents=opt.n_opponents, max_steps=100)
 
   # Set seeds.
   random.seed(3)

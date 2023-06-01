@@ -277,6 +277,7 @@ class RugbyEnv(gym.Env):
 
                 # can score try ?
                 if next_pos[0] >= (self._try_area - 1):
+                    time.sleep(3)
                     self._score_try(OPPONENT_TEAM)
                     # TODO: Score Try Reward
  
