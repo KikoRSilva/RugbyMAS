@@ -40,7 +40,6 @@ class RugbyEnv(gym.Env):
         self._try_area = try_area
         self._base_grid = self.__create_grid()
         self._full_obs = self.__create_grid()
-        self._agent_dones = [False for _ in range(self.n_agents)]
         self._opponent_move_probs = opponent_move_probs
         self.viewer = None
 
@@ -170,23 +169,25 @@ class RugbyEnv(gym.Env):
             
         return observations, rewards, self._players_done, {'score': self._team_scores}
 
-    def __update_agent_pos(self, agent_i, move):
+    def __update_agent_pos(self, agent_i, action):
+
+        print(action)
 
         curr_pos = copy.copy(self.agent_pos[agent_i])
         next_pos = None
         pass_the_ball = False
 
-        if move[0] == 0:  # down
+        if action[0] == 0:  # down
             next_pos = [curr_pos[0] + 1, curr_pos[1]]
-        elif move[0] == 1:  # left
+        elif action[0] == 1:  # left
             next_pos = [curr_pos[0], curr_pos[1] - 1]
-        elif move[0] == 2:  # up
+        elif action[0] == 2:  # up
             next_pos = [curr_pos[0] - 1, curr_pos[1]]
-        elif move[0] == 3:  # right
+        elif action[0] == 3:  # right
             next_pos = [curr_pos[0], curr_pos[1] + 1]
-        elif move[0] == 4:  # stay
+        elif action[0] == 4:  # stay
             pass
-        elif move[0] == 5:  # pass theball
+        elif action[0] == 5:  # pass theball
             pass_the_ball = True
             pass
         else:
@@ -205,9 +206,10 @@ class RugbyEnv(gym.Env):
 
                 # can score try ?
                 if next_pos[0] >= self._grid_shape[0] - self._try_area:
-                    time.sleep(3)
+                    #time.sleep(3)
                     self._score_try(AGENT_TEAM)
-                    # TODO: Score Try Reward
+                    for i in range(self.n_agents + self.n_opponents):
+                        self._players_done[i] = True
  
             # is teammate
             elif self.team_has_ball(AGENT_TEAM):
@@ -230,13 +232,13 @@ class RugbyEnv(gym.Env):
             if pass_the_ball:
                 # has the ball
                 if self.ball_pos == curr_pos:
-
-                    if self.agent_pos[move[1]][0] <= curr_pos[0]:
+                    print(action[0].__str__())
+                    if self.agent_pos[action[1]][0] <= curr_pos[0]:
                         # pass it
                         print(curr_pos.__str__() + "before passing")
-                        self.ball_pos = self.agent_pos[move[1]]
+                        self.ball_pos = self.agent_pos[action[1]]
                         self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['agent'] + str(agent_i + 1)
-                        self._full_obs[self.agent_pos[move[1]][0]][self.agent_pos[move[1]][1]] = PRE_IDS['agent'] + str(move[1] + 1) + 'B' 
+                        self._full_obs[self.agent_pos[action[1]][0]][self.agent_pos[action[1]][1]] = PRE_IDS['agent'] + str(action[1] + 1) + 'B'
                         print(curr_pos.__str__() + "after passing") 
                     else:
                         print("CANNOT PASS FORWARD THE BALL")   
@@ -279,9 +281,10 @@ class RugbyEnv(gym.Env):
 
                 # can score try ?
                 if next_pos[0] >= (self._try_area - 1):
-                    time.sleep(3)
+                    #time.sleep(3)
                     self._score_try(OPPONENT_TEAM)
-                    # TODO: Score Try Reward
+                    for i in range(self.n_agents + self.n_opponents):
+                        self._players_done[i] = True
  
             # is teammate
             elif self.team_has_ball(OPPONENT_TEAM):
@@ -354,51 +357,6 @@ class RugbyEnv(gym.Env):
         # render the game state
         # ...
         pass
-
-    # TODO: Falta organizar que ou queremos só agentes que estão à frente do nosso ou atrás
-    def find_nearest_agents(my_position, agent_positions, number_of_agents=2):
-        """
-        Calculates the number of agents that are nearest to my position
-
-        Args:
-            my_position (tuple): The agent that wants to get the nearest agents
-            agent_positions list[tuple]: position of the each agent in the list
-            number_of_agents (int): The number of agents that we want
-
-        Returns:
-            list[tuple]: The positions of the agents that are nearer
-        """
-        distances = []  # List to store the distances between agents and you
-
-        # Calculate the distance between your position and each agent position
-        for agent_position in agent_positions:
-            distance = math.sqrt((agent_position[0] - my_position[0]) ** 2 + (agent_position[1] - my_position[1]) ** 2)
-            distances.append(distance)
-
-        # Find the indices of the two agents with the smallest distances
-        nearest_indices = sorted(range(len(distances)), key=lambda x: distances[x])[:number_of_agents]
-
-        # Get the positions of the two nearest agents
-        nearest_agents = [agent_positions[i] for i in nearest_indices]
-
-        return nearest_agents
-
-    def calculate_angle(my_position, agent1_position, agent2_position):
-        """
-        Calculate the angles between you and two agents.
-
-        Args:
-            my_position (tuple): Your position as a tuple of (x, y) coordinates.
-            agent1_position (tuple): The position of the first agent as a tuple of (x, y) coordinates.
-            agent2_position (tuple): The position of the second agent as a tuple of (x, y) coordinates.
-
-        Returns:
-            tuple: The angles between you and the two agents in degrees.
-        """
-        angle1 = math.degrees(math.atan2(agent1_position[1] - my_position[1], agent1_position[0] - my_position[0]))
-        angle2 = math.degrees(math.atan2(agent2_position[1] - my_position[1], agent2_position[0] - my_position[0]))
-
-        return angle1, angle2
 
 AGENT_COLOR = ImageColor.getcolor('blue', mode='RGB')
 AGENT_NEIGHBORHOOD_COLOR = (186, 238, 247)

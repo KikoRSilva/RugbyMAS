@@ -17,5 +17,6 @@ class GreedyAgent(Agent):
             ag = np.random.randint(self.n_agents) 
             while ag == self.id:
                ag = np.random.randint(self.n_agents)
-            return (0, ag)
+            return (a, ag)
         return (a, None)
+
