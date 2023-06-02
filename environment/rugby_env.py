@@ -12,6 +12,7 @@ from gym.utils import seeding
 
 from ma_gym.envs.utils.action_space import MultiAgentActionSpace
 from ma_gym.envs.utils.observation_space import MultiAgentObservationSpace
+from ma_gym.envs.utils.draw import draw_grid, fill_cell, draw_circle, write_cell_text
 
 AGENT_TEAM = 0
 OPPONENT_TEAM = 1
@@ -81,6 +82,7 @@ class RugbyEnv(gym.Env):
         self._players_done = [False for _ in range(self.n_agents + self.n_opponents)]
         self._team_scores = (0, 0)
         self._step_count = 0
+        self.__draw_base_img()
 
         # Place players and ball on the grid
         self.__place_agents()
@@ -352,15 +354,43 @@ class RugbyEnv(gym.Env):
         for col in range(self._grid_shape[1]):
             column_values = [row[col] for row in self._full_obs]
             print(column_values)
+
+    def __draw_base_img(self):
+        self._base_img = draw_grid(self._grid_shape[0], self._grid_shape[1], cell_size=CELL_SIZE, fill='white')
     
     def render(self, mode='human'):
-        # render the game state
-        # ...
-        pass
+        img = copy.copy(self._base_img)
+
+        for agent_i in range(self.n_agents):
+            if self.ball_pos == self.agent_pos[agent_i]:
+                draw_circle(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=BALL_CARRIER)
+            else:
+                draw_circle(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=AGENT_COLOR)
+            write_cell_text(img, text=str(agent_i + 1), pos=self.agent_pos[agent_i], cell_size=CELL_SIZE,
+                            fill='white', margin=0.4)
+
+        for opponent_i in range(self.n_opponents):
+            if self.ball_pos == self.opponents_pos[opponent_i]:
+                draw_circle(img, self.opponents_pos[opponent_i], cell_size=CELL_SIZE, fill=BALL_CARRIER)
+            else:
+                draw_circle(img, self.opponents_pos[opponent_i], cell_size=CELL_SIZE, fill=OPPONENT_COLOR)
+            write_cell_text(img, text=str(opponent_i + 1), pos=self.opponents_pos[opponent_i], cell_size=CELL_SIZE,
+                            fill='white', margin=0.4)
+            
+        img = np.asarray(img)
+        if mode == 'rgb_array':
+            return img
+        elif mode == 'human':
+            from gym.envs.classic_control import rendering
+            if self.viewer is None:
+                self.viewer = rendering.SimpleImageViewer()
+            self.viewer.imshow(img)
+            return self.viewer.isopen
 
 AGENT_COLOR = ImageColor.getcolor('blue', mode='RGB')
 AGENT_NEIGHBORHOOD_COLOR = (186, 238, 247)
 OPPONENT_COLOR = 'red'
+BALL_CARRIER = 'purple'
 
 CELL_SIZE = 35
 

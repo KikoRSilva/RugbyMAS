@@ -1,5 +1,6 @@
 import argparse
 import random
+import time
 import numpy as np
 
 from environment.utils import compare_results
@@ -28,6 +29,10 @@ def run_multi_agent(environment, agents, n_episodes):
           agent.see(observations)
         actions = [agent.action() for agent in agents]
         next_observations, rewards, terminals, info = environment.step(actions)
+
+        environment.render()
+        time.sleep(opt.render_sleep_time)
+
         observations = next_observations
 
     results[episode] = steps
@@ -45,6 +50,7 @@ if __name__ == '__main__':
   parser.add_argument("--episodes", type=int, default=100)
   parser.add_argument("--n_agents", type=int, default=7)
   parser.add_argument("--n_opponents", type=int, default=7)
+  parser.add_argument("--render-sleep-time", type=float, default=0.5)
   opt = parser.parse_args()
 
   # Setup the environment
