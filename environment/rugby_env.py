@@ -282,7 +282,7 @@ class RugbyEnv(gym.Env):
                 self.__update_opponent_view(opponent_i, has_ball=True)
 
                 # can score try ?
-                if next_pos[0] >= (self._try_area - 1):
+                if next_pos[0] <= (self._try_area - 1):
                     #time.sleep(3)
                     self._score_try(OPPONENT_TEAM)
                     for i in range(self.n_agents + self.n_opponents):
@@ -357,6 +357,12 @@ class RugbyEnv(gym.Env):
 
     def __draw_base_img(self):
         self._base_img = draw_grid(self._grid_shape[0], self._grid_shape[1], cell_size=CELL_SIZE, fill='white')
+
+        # change try area color
+        for col in range(self._grid_shape[0]):
+            for row in range(self._grid_shape[1]):
+                if col <=self._try_area - 1 or col >= self._grid_shape[0] - self._try_area:
+                    fill_cell(self._base_img, (col, row), cell_size=CELL_SIZE, fill=TRY_AREA_COLOR, margin=0.1)
     
     def render(self, mode='human'):
         img = copy.copy(self._base_img)
@@ -391,6 +397,7 @@ AGENT_COLOR = ImageColor.getcolor('blue', mode='RGB')
 AGENT_NEIGHBORHOOD_COLOR = (186, 238, 247)
 OPPONENT_COLOR = 'red'
 BALL_CARRIER = 'purple'
+TRY_AREA_COLOR = 'yellow'
 
 CELL_SIZE = 35
 

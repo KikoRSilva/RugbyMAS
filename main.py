@@ -50,7 +50,7 @@ if __name__ == '__main__':
   parser.add_argument("--episodes", type=int, default=100)
   parser.add_argument("--n_agents", type=int, default=7)
   parser.add_argument("--n_opponents", type=int, default=7)
-  parser.add_argument("--render-sleep-time", type=float, default=0.5)
+  parser.add_argument("--render-sleep-time", type=float, default=0.3)
   opt = parser.parse_args()
 
   # Setup the environment
