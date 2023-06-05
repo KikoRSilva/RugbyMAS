@@ -103,7 +103,6 @@ class RugbyEnv(gym.Env):
 
     def __place_agents(self):
         x = (self._grid_shape[0] - 1) // 4 # center left midfield
-        # x = 17
         offset = (self._grid_shape[1] % self.n_agents) / 2
         for agent_i in range(self.n_agents):
             y = int(agent_i + offset)
@@ -111,7 +110,7 @@ class RugbyEnv(gym.Env):
             self._full_obs[x][y] = PRE_IDS['agent'] + str(agent_i + 1)
 
     def __place_opponents(self):
-        x = self._grid_shape[0] - 1 - self._grid_shape[0] // 4 # center right midfield
+        x = self._grid_shape[0] - 1 - ( self._grid_shape[0] // 4 ) # center right midfield
         offset = (self._grid_shape[1] % self.n_opponents) / 2
         for opponent_i in range(self.n_opponents):
             y = int(opponent_i + offset)
@@ -162,22 +161,16 @@ class RugbyEnv(gym.Env):
             observation = self.__get_observation(OPPONENT_TEAM, opponent_i)
             observations.append(observation)
 
-        #time.sleep(1)
         self.print_field()
-        print("\n")
-        print("Score: " + self._team_scores.__str__())
-        print("Step: " + str(self._step_count))
-        print("\n")
             
         return observations, rewards, self._players_done, {'score': self._team_scores}
 
     def __update_agent_pos(self, agent_i, action):
 
-        print(action)
-
         curr_pos = copy.copy(self.agent_pos[agent_i])
         next_pos = None
         pass_the_ball = False
+        stay_in_position = False
 
         if action[0] == 0:  # down
             next_pos = [curr_pos[0] + 1, curr_pos[1]]
@@ -188,10 +181,9 @@ class RugbyEnv(gym.Env):
         elif action[0] == 3:  # right
             next_pos = [curr_pos[0], curr_pos[1] + 1]
         elif action[0] == 4:  # stay
-            pass
+            stay_in_position = True
         elif action[0] == 5:  # pass theball
             pass_the_ball = True
-            pass
         else:
             raise Exception('Action Not found!')
 
@@ -204,7 +196,6 @@ class RugbyEnv(gym.Env):
                 self.agent_pos[agent_i] = next_pos
                 self.ball_pos = next_pos
                 self.__update_agent_view(agent_i, has_ball=True)
-
 
                 # can score try ?
                 if next_pos[0] >= self._grid_shape[0] - self._try_area:
@@ -225,7 +216,7 @@ class RugbyEnv(gym.Env):
 
                 self.__update_agent_view(agent_i)
             else:
-                # is defender
+                # is running without ball
                 self._full_obs[curr_pos[0]][curr_pos[1]] = self.set_empty_or_wall(curr_pos)
                 self.agent_pos[agent_i] = next_pos
                 self.__update_agent_view(agent_i)
@@ -234,45 +225,48 @@ class RugbyEnv(gym.Env):
             if pass_the_ball:
                 # has the ball
                 if self.ball_pos == curr_pos:
-                    print(action[0].__str__())
                     if self.agent_pos[action[1]][0] <= curr_pos[0]:
                         # pass it
-                        print(curr_pos.__str__() + "before passing")
                         self.ball_pos = self.agent_pos[action[1]]
                         self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['agent'] + str(agent_i + 1)
                         self._full_obs[self.agent_pos[action[1]][0]][self.agent_pos[action[1]][1]] = PRE_IDS['agent'] + str(action[1] + 1) + 'B'
-                        print(curr_pos.__str__() + "after passing") 
                     else:
                         print("CANNOT PASS FORWARD THE BALL")   
+            elif stay_in_position:
+                pass 
+            else:
+                # agent in next_pos
+                nearby_opponent = self.__identify_opponent(next_pos)
 
-    def __update_opponent_pos(self, opponent_i, move):
+                # is an agent and is the ball carrier
+                if nearby_opponent is not None and self.ball_pos == self.opponents_pos[nearby_opponent]:
+                    # tackle
+                    self.ball_pos = curr_pos
+                    self.__update_agent_view(agent_i=agent_i, has_ball=True)
+
+    def __update_opponent_pos(self, opponent_i, action):
 
         curr_pos = copy.copy(self.opponents_pos[opponent_i])
         next_pos = None
         pass_the_ball = False
+        stay_in_position = False
 
-        if move[0] == 0:  # down
+        if action[0] == 0:  # down
             next_pos = [curr_pos[0] + 1, curr_pos[1]]
-        elif move[0] == 1:  # left
+        elif action[0] == 1:  # left
             next_pos = [curr_pos[0], curr_pos[1] - 1]
-        elif move[0] == 2:  # up
+        elif action[0] == 2:  # up
             next_pos = [curr_pos[0] - 1, curr_pos[1]]
-        elif move[0] == 3:  # right
+        elif action[0] == 3:  # right
             next_pos = [curr_pos[0], curr_pos[1] + 1]
-        elif move[0] == 4:  # stay
-            pass
-        elif move[0] == 5:  # pass theball
-            # TODO: Check if has the ball or any teammate
+        elif action[0] == 4:  # stay
+            stay_in_position = True
+        elif action[0] == 5:  # pass theball
             pass_the_ball = True
-            pass
         else:
             raise Exception('Action Not found!')
 
-        # If move and there is no one in cell
-        # else:
-        #   TODO: Pass the ball
         if next_pos is not None and self._is_cell_vacant(next_pos):
-
             # is ball carrier
             if self.ball_pos == curr_pos:
 
@@ -300,7 +294,7 @@ class RugbyEnv(gym.Env):
 
                 self.__update_opponent_view(opponent_i)
             else:
-                # is defender
+                # is running without ball
                 self._full_obs[curr_pos[0]][curr_pos[1]] = self.set_empty_or_wall(curr_pos)
                 self.opponents_pos[opponent_i] = next_pos
                 self.__update_opponent_view(opponent_i)
@@ -310,10 +304,39 @@ class RugbyEnv(gym.Env):
             if pass_the_ball:
                 # has the ball
                 if self.ball_pos == curr_pos:
-                    # pass it
-                    self.ball_pos = self.opponents_pos[move[1]]
-                    self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['opponent'] + str(opponent_i + 1)
-                    self._full_obs[self.opponents_pos[move[1]][0]][self.opponents_pos[move[1]][1]] = PRE_IDS['opponent'] + str(move[1] + 1) + 'B'   
+
+                    if self.opponents_pos[action[1]][0] >= curr_pos[0]:
+                        # pass it
+                        self.ball_pos = self.opponents_pos[action[1]]
+                        self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['opponent'] + str(opponent_i + 1)
+                        self._full_obs[self.opponents_pos[action[1]][0]][self.opponents_pos[action[1]][1]] = PRE_IDS['opponent'] + str(action[1] + 1) + 'B' 
+                    else:
+                        print("CANNOT PASS FORWARD THE BALL") 
+            elif stay_in_position:
+                pass 
+            else:
+                # agent in next_pos
+                nearby_agent = self.__identify_agent(next_pos)
+
+                # is an agent and is the ball carrier
+                if nearby_agent is not None and self.ball_pos == self.agent_pos[nearby_agent]:
+                    # tackle
+                    self.ball_pos = curr_pos
+                    self.__update_opponent_view(opponent_i=opponent_i, has_ball=True)
+
+
+                
+    def __identify_agent(self, pos):
+        for agent_i, agent_pos in self.agent_pos.items():
+            if agent_pos == pos:
+                return agent_i
+        return None
+    
+    def __identify_opponent(self, pos):
+        for opponent_i, opponent_pos in self.opponents_pos.items():
+            if opponent_pos == pos:
+                return opponent_i
+        return None
 
     def __update_agent_view(self, agent_i, has_ball=False):
         self._full_obs[self.agent_pos[agent_i][0]][self.agent_pos[agent_i][1]] = PRE_IDS['agent'] + str(agent_i + 1) + ('B' if has_ball else '')

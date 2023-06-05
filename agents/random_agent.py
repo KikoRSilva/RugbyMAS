@@ -17,5 +17,5 @@ class RandomAgent(Agent):
             ag = np.random.randint(self.n_agents) 
             while ag == self.id:
                ag = np.random.randint(self.n_agents)
-            return (0, ag)
+            return (5, ag)
         return (a, None)
