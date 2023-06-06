@@ -27,15 +27,18 @@ class DummyGreedyAgent(Agent):
         agents_position = self.observation[2:2+self.n_agents]
         opponents_position = self.observation[2+self.n_agents:2+self.n_agents+self.n_opponents]
 
-        if my_position.all() == ball_position.all():
+        if my_position[0] == ball_position[0] and my_position[1] == ball_position[1]:
+
             if self.team == AGENT_TEAM:
-                closest_opponent, closest_opponent_i = self.find_closest_player(my_position, opponents_position)
-                closest_bro, closest_bro_i = self.find_closest_player(my_position, agents_position)
+                closest_opponent, _ = self.find_closest_player(my_position, opponents_position)
+                closest_bro, closest_bro_i = self.find_closest_teammate(my_position, agents_position, AGENT_TEAM)
             else:
-                closest_opponent, closest_opponent_i = self.find_closest_player(my_position, agents_position)
-                closest_bro, closest_bro_i = self.find_closest_player(my_position, opponents_position)
+                closest_opponent, _ = self.find_closest_player(my_position, agents_position)
+                closest_bro, closest_bro_i = self.find_closest_teammate(my_position, opponents_position,OPPONENT_TEAM)
+
             bro_found = closest_bro is not None
             opponent_found = closest_opponent is not None
+
             if opponent_found and bro_found:
                 action = self._decide(my_position, closest_opponent, closest_bro_i)
             else:
@@ -51,19 +54,51 @@ class DummyGreedyAgent(Agent):
         else:
             return (DOWN, None) if AGENT_TEAM == self.team else (UP, None)
         
-
-    def find_closest_player(self, my_position, opponent_positions):
+    def find_closest_teammate(self, my_position, teammates, team):
         min = math.inf
-        closest_opponent_position = None
-        closest_opponent_index = None
-        for p in range(self.n_opponents):
-            opponent_position = opponent_positions[p]
-            distance = cityblock(my_position, opponent_position)
-            if distance < min:
-                min = distance
-                closest_opponent_position = opponent_position
-                closest_opponent_index = p
-        return closest_opponent_position, closest_opponent_index
+        closest_teammate_position = None
+        closest_teammate_index = None
+        teammates_length = len(teammates)
+
+        for p in range(teammates_length):
+            teammate = teammates[p]
+            if AGENT_TEAM == team:
+                if not(teammate[0] == my_position[0] and teammate[1] == my_position[1]) and my_position[0] >= teammate[0]:
+                    distance = cityblock(my_position, teammate)
+                    if distance < min:
+                        min = distance
+                        closest_teammate_position = teammate
+                        closest_teammate_index = p
+            else:
+                if not(teammate[0] == my_position[0] and teammate[1] == my_position[1]) and my_position[0] <= teammate[0]:
+                    distance = cityblock(my_position, teammate)
+                    if distance < min:
+                        min = distance
+                        closest_teammate_position = teammate
+                        closest_teammate_index = p
+
+        return closest_teammate_position, closest_teammate_index
+
+    def find_closest_player(self, my_position, players_position):
+        min = math.inf
+        closest_player_position = None
+        closest_player_index = None
+        players_length = len(players_position)
+
+        for p in range(players_length):
+            opponent_position = players_position[p]
+
+            if not(opponent_position[0] == my_position[0] and opponent_position[1] == my_position[1]):
+                
+                distance = cityblock(my_position, opponent_position)
+                
+                if distance < min:
+                    
+                    min = distance
+                    closest_player_position = opponent_position
+                    closest_player_index = p
+
+        return closest_player_position, closest_player_index
 
 
     

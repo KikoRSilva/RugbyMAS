@@ -191,7 +191,7 @@ class RugbyEnv(gym.Env):
 
             # is ball carrier
             if self.ball_pos == curr_pos:
-                print("I AM THE BALL CARRIER AT " + curr_pos.__str__() + " AND I WANT TO GO TO: " + next_pos.__str__())
+
                 self._full_obs[curr_pos[0]][curr_pos[1]] = self.set_empty_or_wall(curr_pos)
                 self.agent_pos[agent_i] = next_pos
                 self.ball_pos = next_pos
@@ -203,18 +203,7 @@ class RugbyEnv(gym.Env):
                     self._score_try(AGENT_TEAM)
                     for i in range(self.n_agents + self.n_opponents):
                         self._players_done[i] = True
- 
-            # is teammate
-            elif self.team_has_ball(AGENT_TEAM):
 
-                self._full_obs[curr_pos[0]][curr_pos[1]] = self.set_empty_or_wall(curr_pos)
-                if next_pos[0] <= self.ball_pos[0]:
-                    self.agent_pos[agent_i] = next_pos
-                elif self._is_cell_vacant([curr_pos[0] - 1, curr_pos[1]]):
-                    print("CANNOT MOVE TOWARDS THE BALL CARRIER, GO BACK")
-                    self.agent_pos[agent_i] = [curr_pos[0] - 1, curr_pos[1]]
-
-                self.__update_agent_view(agent_i)
             else:
                 # is running without ball
                 self._full_obs[curr_pos[0]][curr_pos[1]] = self.set_empty_or_wall(curr_pos)
@@ -223,22 +212,18 @@ class RugbyEnv(gym.Env):
         # pass or stay
         else:
             if pass_the_ball:
-                # has the ball
-                if self.ball_pos == curr_pos:
-                    if self.agent_pos[action[1]][0] <= curr_pos[0]:
-                        # pass it
-                        self.ball_pos = self.agent_pos[action[1]]
-                        self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['agent'] + str(agent_i + 1)
-                        self._full_obs[self.agent_pos[action[1]][0]][self.agent_pos[action[1]][1]] = PRE_IDS['agent'] + str(action[1] + 1) + 'B'
-                    else:
-                        print("CANNOT PASS FORWARD THE BALL")   
+                print(str(agent_i) + 'Passei para ' + str(action[1]))
+                self.ball_pos = self.agent_pos[action[1]]
+                self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['agent'] + str(agent_i + 1)
+                self._full_obs[self.agent_pos[action[1]][0]][self.agent_pos[action[1]][1]] = PRE_IDS['agent'] + str(action[1] + 1) + 'B' 
+                   
             elif stay_in_position:
                 pass 
             else:
-                # agent in next_pos
+                # opponent in next_pos
                 nearby_opponent = self.__identify_opponent(next_pos)
 
-                # is an agent and is the ball carrier
+                # is an opponent and is the ball carrier
                 if nearby_opponent is not None and self.ball_pos == self.opponents_pos[nearby_opponent]:
                     # tackle
                     self.ball_pos = curr_pos
@@ -261,7 +246,7 @@ class RugbyEnv(gym.Env):
             next_pos = [curr_pos[0], curr_pos[1] + 1]
         elif action[0] == 4:  # stay
             stay_in_position = True
-        elif action[0] == 5:  # pass theball
+        elif action[0] == 5:  # pass the ball
             pass_the_ball = True
         else:
             raise Exception('Action Not found!')
@@ -269,7 +254,7 @@ class RugbyEnv(gym.Env):
         if next_pos is not None and self._is_cell_vacant(next_pos):
             # is ball carrier
             if self.ball_pos == curr_pos:
-
+        
                 self.ball_pos = next_pos
                 self._full_obs[curr_pos[0]][curr_pos[1]] = self.set_empty_or_wall(curr_pos)
                 self.opponents_pos[opponent_i] = next_pos
@@ -282,17 +267,6 @@ class RugbyEnv(gym.Env):
                     for i in range(self.n_agents + self.n_opponents):
                         self._players_done[i] = True
  
-            # is teammate
-            elif self.team_has_ball(OPPONENT_TEAM):
-
-                self._full_obs[curr_pos[0]][curr_pos[1]] = self.set_empty_or_wall(curr_pos)
-                if next_pos[0] <= self.ball_pos[0]:
-                    self.opponents_pos[opponent_i] = next_pos
-                elif self._is_cell_vacant([curr_pos[0] + 1, curr_pos[1]]):
-                    print("CANNOT MOVE TOWARDS THE BALL CARRIER, GO BACK")
-                    self.opponents_pos[opponent_i] = [curr_pos[0] + 1, curr_pos[1]]
-
-                self.__update_opponent_view(opponent_i)
             else:
                 # is running without ball
                 self._full_obs[curr_pos[0]][curr_pos[1]] = self.set_empty_or_wall(curr_pos)
@@ -302,16 +276,11 @@ class RugbyEnv(gym.Env):
         # pass or stay
         else:
             if pass_the_ball:
-                # has the ball
-                if self.ball_pos == curr_pos:
 
-                    if self.opponents_pos[action[1]][0] >= curr_pos[0]:
-                        # pass it
-                        self.ball_pos = self.opponents_pos[action[1]]
-                        self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['opponent'] + str(opponent_i + 1)
-                        self._full_obs[self.opponents_pos[action[1]][0]][self.opponents_pos[action[1]][1]] = PRE_IDS['opponent'] + str(action[1] + 1) + 'B' 
-                    else:
-                        print("CANNOT PASS FORWARD THE BALL") 
+                self.ball_pos = self.opponents_pos[action[1]]
+                self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['opponent'] + str(opponent_i + 1)
+                self._full_obs[self.opponents_pos[action[1]][0]][self.opponents_pos[action[1]][1]] = PRE_IDS['opponent'] + str(action[1] + 1) + 'B' 
+                        
             elif stay_in_position:
                 pass 
             else:
@@ -377,6 +346,8 @@ class RugbyEnv(gym.Env):
         for col in range(self._grid_shape[1]):
             column_values = [row[col] for row in self._full_obs]
             print(column_values)
+            
+        print('\n')
 
     def __draw_base_img(self):
         self._base_img = draw_grid(self._grid_shape[0], self._grid_shape[1], cell_size=CELL_SIZE, fill='white')
