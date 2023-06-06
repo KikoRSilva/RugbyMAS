@@ -1,2 +1,4 @@
 .idea/
+__pycache__
 environment/__pycache__/
+agents/__pycache__/
