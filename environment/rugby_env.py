@@ -21,7 +21,8 @@ OPPONENT_TEAM = 1
 class RugbyEnv(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
 
-    def __init__(self, grid_shape=(21, 11), n_agents=7, n_opponents=7, max_steps=100, penalty=-0.5, step_cost=-0.01, score_try_reward=5, opponent_move_probs=(0.175, 0.175, 0.175, 0.175, 0.3, 0), try_area=2):
+    def __init__(self, grid_shape=(21, 11), n_agents=7, n_opponents=7, max_steps=100, penalty=-0.5, step_cost=-0.01,
+                 score_try_reward=5, opponent_move_probs=(0.175, 0.175, 0.175, 0.175, 0.3, 0), try_area=2):
         self._grid_shape = grid_shape
         self.n_agents = n_agents
         self.n_opponents = n_opponents
@@ -48,7 +49,7 @@ class RugbyEnv(gym.Env):
         self.observation_size = 1 + 1 + 1 + self.n_agents + self.n_opponents
         self.observation_space = MultiAgentObservationSpace(
             [spaces.Box(0.0, 1.0, shape=(self.observation_size,)) for _ in range(self.n_agents + self.n_opponents)])
-        
+
         self._total_episode_reward = None
         self.seed()
 
@@ -64,11 +65,11 @@ class RugbyEnv(gym.Env):
             _grid.append(_row)
 
         return _grid
-    
+
     def seed(self, n=None):
         self.np_random, seed = seeding.np_random(n)
         return [seed]
-    
+
     def close(self):
         if self.viewer is not None:
             self.viewer.close()
@@ -94,7 +95,7 @@ class RugbyEnv(gym.Env):
         for agent_i in range(self.n_agents):
             observation = self.__get_observation(AGENT_TEAM, agent_i)
             observations.append(observation)
-            
+
         for opponent_i in range(self.n_opponents):
             observation = self.__get_observation(OPPONENT_TEAM, opponent_i)
             observations.append(observation)
@@ -102,7 +103,7 @@ class RugbyEnv(gym.Env):
         return observations
 
     def __place_agents(self):
-        x = (self._grid_shape[0] - 1) // 4 # center left midfield
+        x = (self._grid_shape[0] - 1) // 4  # center left midfield
         offset = (self._grid_shape[1] % self.n_agents) / 2
         for agent_i in range(self.n_agents):
             y = int(agent_i + offset)
@@ -110,7 +111,7 @@ class RugbyEnv(gym.Env):
             self._full_obs[x][y] = PRE_IDS['agent'] + str(agent_i + 1)
 
     def __place_opponents(self):
-        x = self._grid_shape[0] - 1 - ( self._grid_shape[0] // 4 ) # center right midfield
+        x = self._grid_shape[0] - 1 - (self._grid_shape[0] // 4)  # center right midfield
         offset = (self._grid_shape[1] % self.n_opponents) / 2
         for opponent_i in range(self.n_opponents):
             y = int(opponent_i + offset)
@@ -118,31 +119,31 @@ class RugbyEnv(gym.Env):
             self._full_obs[x][y] = PRE_IDS['opponent'] + str(opponent_i + 1)
 
     def __place_ball(self):
-        agent_i = np.random.randint(0, self.n_agents) # choose random agent
+        agent_i = np.random.randint(0, self.n_agents)  # choose random agent
         self.ball_pos = self.agent_pos[agent_i]
         self._full_obs[self.ball_pos[0]][self.ball_pos[1]] = 'A' + str(agent_i + 1) + PRE_IDS['ball']
-        
+
     def __get_observation(self, team, id):
         # agent pos, ball pos, score, players pos
         observation = np.array([(0, 0) for _ in range(1 + 1 + 1 + self.n_agents + self.n_opponents)])
         observation[0] = self.agent_pos[id] if team == AGENT_TEAM else self.opponents_pos[id]
         observation[1] = self.ball_pos
         observation[2] = self._team_scores
-        observation[2:2+self.n_agents] = list(self.agent_pos.values())
-        observation[2+self.n_agents:2+self.n_agents+self.n_opponents] = list(self.opponents_pos.values())
+        observation[2:2 + self.n_agents] = list(self.agent_pos.values())
+        observation[2 + self.n_agents:2 + self.n_agents + self.n_opponents] = list(self.opponents_pos.values())
         return observation
-    
+
     def step(self, actions):
         self._step_count += 1
         rewards = [self._step_cost for _ in range(self.n_agents + self.n_opponents)]
 
         for player_i, action in enumerate(actions):
-           if not (self._players_done[player_i]):
+            if not (self._players_done[player_i]):
                 if player_i <= 6:
-                    #print("Agent " + str(player_i) + " choose action " + str(action))
-                    self.__update_agent_pos(player_i, action)    # agent ids [0 - 6]
+                    # print("Agent " + str(player_i) + " choose action " + str(action))
+                    self.__update_agent_pos(player_i, action)  # agent ids [0 - 6]
                 else:
-                    #print("Opponent " + str(player_i - self.n_opponents) + " choose action " + str(action))
+                    # print("Opponent " + str(player_i - self.n_opponents) + " choose action " + str(action))
                     self.__update_opponent_pos(player_i - self.n_opponents, action)  # opponent ids [7 - 13]
 
         if (self._step_count >= self._max_steps):
@@ -156,13 +157,13 @@ class RugbyEnv(gym.Env):
         for agent_i in range(self.n_agents):
             observation = self.__get_observation(AGENT_TEAM, agent_i)
             observations.append(observation)
-            
+
         for opponent_i in range(self.n_opponents):
             observation = self.__get_observation(OPPONENT_TEAM, opponent_i)
             observations.append(observation)
 
         self.print_field()
-            
+
         return observations, rewards, self._players_done, {'score': self._team_scores}
 
     def __update_agent_pos(self, agent_i, action):
@@ -199,7 +200,7 @@ class RugbyEnv(gym.Env):
 
                 # can score try ?
                 if next_pos[0] >= self._grid_shape[0] - self._try_area:
-                    #time.sleep(3)
+                    # time.sleep(3)
                     self._score_try(AGENT_TEAM)
                     for i in range(self.n_agents + self.n_opponents):
                         self._players_done[i] = True
@@ -215,10 +216,11 @@ class RugbyEnv(gym.Env):
                 print(str(agent_i) + 'Passei para ' + str(action[1]))
                 self.ball_pos = self.agent_pos[action[1]]
                 self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['agent'] + str(agent_i + 1)
-                self._full_obs[self.agent_pos[action[1]][0]][self.agent_pos[action[1]][1]] = PRE_IDS['agent'] + str(action[1] + 1) + 'B' 
-                   
+                self._full_obs[self.agent_pos[action[1]][0]][self.agent_pos[action[1]][1]] = PRE_IDS['agent'] + str(
+                    action[1] + 1) + 'B'
+
             elif stay_in_position:
-                pass 
+                pass
             else:
                 # opponent in next_pos
                 nearby_opponent = self.__identify_opponent(next_pos)
@@ -254,7 +256,7 @@ class RugbyEnv(gym.Env):
         if next_pos is not None and self._is_cell_vacant(next_pos):
             # is ball carrier
             if self.ball_pos == curr_pos:
-        
+
                 self.ball_pos = next_pos
                 self._full_obs[curr_pos[0]][curr_pos[1]] = self.set_empty_or_wall(curr_pos)
                 self.opponents_pos[opponent_i] = next_pos
@@ -262,27 +264,29 @@ class RugbyEnv(gym.Env):
 
                 # can score try ?
                 if next_pos[0] <= (self._try_area - 1):
-                    #time.sleep(3)
+                    # time.sleep(3)
                     self._score_try(OPPONENT_TEAM)
                     for i in range(self.n_agents + self.n_opponents):
                         self._players_done[i] = True
- 
+
             else:
                 # is running without ball
                 self._full_obs[curr_pos[0]][curr_pos[1]] = self.set_empty_or_wall(curr_pos)
                 self.opponents_pos[opponent_i] = next_pos
                 self.__update_opponent_view(opponent_i)
-               
+
         # pass or stay
         else:
             if pass_the_ball:
 
                 self.ball_pos = self.opponents_pos[action[1]]
                 self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['opponent'] + str(opponent_i + 1)
-                self._full_obs[self.opponents_pos[action[1]][0]][self.opponents_pos[action[1]][1]] = PRE_IDS['opponent'] + str(action[1] + 1) + 'B' 
-                        
+                self._full_obs[self.opponents_pos[action[1]][0]][self.opponents_pos[action[1]][1]] = PRE_IDS[
+                                                                                                         'opponent'] + str(
+                    action[1] + 1) + 'B'
+
             elif stay_in_position:
-                pass 
+                pass
             else:
                 # agent in next_pos
                 nearby_agent = self.__identify_agent(next_pos)
@@ -293,14 +297,12 @@ class RugbyEnv(gym.Env):
                     self.ball_pos = curr_pos
                     self.__update_opponent_view(opponent_i=opponent_i, has_ball=True)
 
-
-                
     def __identify_agent(self, pos):
         for agent_i, agent_pos in self.agent_pos.items():
             if agent_pos == pos:
                 return agent_i
         return None
-    
+
     def __identify_opponent(self, pos):
         for opponent_i, opponent_pos in self.opponents_pos.items():
             if opponent_pos == pos:
@@ -308,27 +310,33 @@ class RugbyEnv(gym.Env):
         return None
 
     def __update_agent_view(self, agent_i, has_ball=False):
-        self._full_obs[self.agent_pos[agent_i][0]][self.agent_pos[agent_i][1]] = PRE_IDS['agent'] + str(agent_i + 1) + ('B' if has_ball else '')
+        self._full_obs[self.agent_pos[agent_i][0]][self.agent_pos[agent_i][1]] = PRE_IDS['agent'] + str(agent_i + 1) + (
+            'B' if has_ball else '')
 
     def __update_opponent_view(self, opponent_i, has_ball=False):
-        self._full_obs[self.opponents_pos[opponent_i][0]][self.opponents_pos[opponent_i][1]] = PRE_IDS['opponent'] + str(opponent_i + 1) + ('B' if has_ball else '')
+        self._full_obs[self.opponents_pos[opponent_i][0]][self.opponents_pos[opponent_i][1]] = PRE_IDS[
+                                                                                                   'opponent'] + str(
+            opponent_i + 1) + ('B' if has_ball else '')
 
     def _is_cell_vacant(self, pos):
-        return self.is_valid(pos) and (self._full_obs[pos[0]][pos[1]] == PRE_IDS['empty'] or self._full_obs[pos[0]][pos[1]] == PRE_IDS['wall'])
-    
+        return self.is_valid(pos) and (
+                    self._full_obs[pos[0]][pos[1]] == PRE_IDS['empty'] or self._full_obs[pos[0]][pos[1]] == PRE_IDS[
+                'wall'])
+
     def is_valid(self, pos):
         return (0 <= pos[0] < self._grid_shape[0]) and (0 <= pos[1] < self._grid_shape[1])
-    
+
     def set_empty_or_wall(self, pos):
-        return PRE_IDS['empty'] if pos[0] != self._grid_shape[0] - self._try_area and pos[0] != self._try_area - 1 else PRE_IDS['wall']
-    
+        return PRE_IDS['empty'] if pos[0] != self._grid_shape[0] - self._try_area and pos[0] != self._try_area - 1 else \
+        PRE_IDS['wall']
+
     def _score_try(self, team):
         agent_score, opponent_score = self._team_scores
         if team == AGENT_TEAM:
             self._team_scores = (agent_score + 5, opponent_score)
         else:
             self._team_scores = (agent_score, opponent_score + 5)
-    
+
     def team_has_ball(self, team):
         if team == AGENT_TEAM:
             for pos in self.agent_pos.values():
@@ -340,13 +348,13 @@ class RugbyEnv(gym.Env):
                 if pos == self.ball_pos:
                     return True
             return False
-    
+
     def print_field(self):
-        
+
         for col in range(self._grid_shape[1]):
             column_values = [row[col] for row in self._full_obs]
             print(column_values)
-            
+
         print('\n')
 
     def __draw_base_img(self):
@@ -355,15 +363,15 @@ class RugbyEnv(gym.Env):
         # change try area color
         for col in range(self._grid_shape[0]):
             for row in range(self._grid_shape[1]):
-                if col <=self._try_area - 1 or col >= self._grid_shape[0] - self._try_area:
+                if col <= self._try_area - 1 or col >= self._grid_shape[0] - self._try_area:
                     fill_cell(self._base_img, (col, row), cell_size=CELL_SIZE, fill=TRY_AREA_COLOR, margin=0.1)
-    
+
     def render(self, mode='human'):
         img = copy.copy(self._base_img)
 
         for agent_i in range(self.n_agents):
             if self.ball_pos == self.agent_pos[agent_i]:
-                draw_circle(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=BALL_CARRIER)
+                draw_circle(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=BALL_CARRIER_AGENT_TEAM)
             else:
                 draw_circle(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=AGENT_COLOR)
             write_cell_text(img, text=str(agent_i + 1), pos=self.agent_pos[agent_i], cell_size=CELL_SIZE,
@@ -371,12 +379,12 @@ class RugbyEnv(gym.Env):
 
         for opponent_i in range(self.n_opponents):
             if self.ball_pos == self.opponents_pos[opponent_i]:
-                draw_circle(img, self.opponents_pos[opponent_i], cell_size=CELL_SIZE, fill=BALL_CARRIER)
+                draw_circle(img, self.opponents_pos[opponent_i], cell_size=CELL_SIZE, fill=BALL_CARRIER_OPPONENT_TEAM)
             else:
                 draw_circle(img, self.opponents_pos[opponent_i], cell_size=CELL_SIZE, fill=OPPONENT_COLOR)
             write_cell_text(img, text=str(opponent_i + 1), pos=self.opponents_pos[opponent_i], cell_size=CELL_SIZE,
                             fill='white', margin=0.4)
-            
+
         img = np.asarray(img)
         if mode == 'rgb_array':
             return img
@@ -387,10 +395,12 @@ class RugbyEnv(gym.Env):
             self.viewer.imshow(img)
             return self.viewer.isopen
 
-AGENT_COLOR = ImageColor.getcolor('blue', mode='RGB')
+
+AGENT_COLOR = (0, 0, 255)
 AGENT_NEIGHBORHOOD_COLOR = (186, 238, 247)
-OPPONENT_COLOR = 'red'
-BALL_CARRIER = 'purple'
+OPPONENT_COLOR = (255, 0, 0)
+BALL_CARRIER_AGENT_TEAM = (0, 220, 255)
+BALL_CARRIER_OPPONENT_TEAM = (255, 220, 000)
 TRY_AREA_COLOR = 'yellow'
 
 CELL_SIZE = 35
