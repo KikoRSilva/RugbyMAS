@@ -62,8 +62,12 @@ if __name__ == '__main__':
   np.random.seed(3)
   env.seed(3)
 
-  # Setup the teams
-  conventions = [[0, 1, 2, 3, 5, 6], [BALL_CARRIER, ATTACKER, TACKLER, FORWARD_DEFENSE, BACK_DEFENSE]]
+  ACTIONS = 6
+  DOWN, LEFT, UP, RIGHT, STAY, PASS = range(ACTIONS)
+  conventions = {
+     'attack': [[0, 1, 2, 3, 4, 5, 6], []],
+     'defense': [[0, 1, 2, 3, 4, 5, 6], []]
+  }
 
   roles = [BALL_CARRIER, ATTACKER, TACKLER, FORWARD_DEFENSE, BACK_DEFENSE]
   random_games = {
