@@ -6,61 +6,71 @@ from .base_agent import Agent
 AGENT_TEAM = 0
 OPPONENT_TEAM = 1
 
+ATTACKING = 0
+DEFENDING = 1
+
 ACTIONS = 6
 DOWN, LEFT, UP, RIGHT, STAY, PASS = range(ACTIONS)
 
 ROLES = 7
 BALL_CARRIER, RIGHT_SUPPORTER, LEFT_SUPPORTER, RIGHT_SUB_SUPPORTER, LEFT_SUB_SUPPORTER, RIGH_WING, LEFT_WING = range(ROLES)
 
+FORWARD_DEFENDER_1, FORWARD_DEFENDER_2, FORWARD_DEFENDER_3, FORWARD_DEFENDER_4, BACK_DEFENDER_1, BACK_DEFENDER_2, BACK_DEFENDER_3 = range(ROLES)
+
 
 class RoleAgent(Agent):
 
-    def __init__(self, agent_id: int, n_agents: int, roles: List, role_assign_period: int = 1)):
+    def __init__(self, agent_id: int, n_agents: int, roles: List, team: int, attack_roles: List, defense_roles: List, role_assign_period: int = 1):
         super(RoleAgent, self).__init__(f"Role-based Agent")
         self.agent_id = agent_id
         self.n_agents = n_agents
-        self.roles = roles
         self.role_assign_period = role_assign_period
         self.curr_role = None
         self.steps_counter = 0
+        self.team = team
+        self.attack_roles= attack_roles
+        self.defense_roles=defense_roles
 
-
-    def potential_function(self, agent_pos: Tuple, ball_pos: Tuple,oponents_positions: List, role: int):
+    def nearest_to_the_left(self, my_position, colleagues_position):
         """
-        Calculates the potential function used for role assignment.
-        The potential function consists of the negative Manhattan distance between the
-        `agent_pos` and the target position of the given `role` (which corresponds
-        to a position that is adjacent to the position of the prey).
+        We are x2 and we may be in "p" and just in 1 of these ps.
+        x1 corresponds to our nearest colleague
+        | p | p | p |  p |
+        ------------------
+        | O | O | x1 | O |
+        ------------------
+        | O | O | O  | O |
 
-        :param agent_pos: agent position
-        :param prey_pos: prey position
-        :param role: role
-
-        :return: (float) potential value
         """
-        # 2 prox da bola -> supporters;
-        # 1 prox do supporters -> sub-supporters
-        # 1 mais próximo das primeiras 3 linhas -> winger left/right
-        prey_adj_locs = self.get_prey_adj_locs(prey_pos)
-        role_target_pos = prey_adj_locs[role]
-        return cityblock(agent_pos, role_target_pos)
+        distances = {}
+        colleagues_at_the_left = []
+        for i, colleague_position in enumerate(colleagues_position):
+            if colleague_position[1]<= my_position[1]:
+                return None
 
-    def role_assignment(self):
-        """
-        Given the observation vector containing the positions of all predators
-        and the prey(s), compute the role-assignment for each of the agents.
+        #for i, coleague_pos in enumerate(colleagues_position):
+        #    distances[i] = cityblock(my_position, coleague_pos)
 
-        :return: a list with the role assignment for each of the agents
-        """
-        prey_pos = self.observation[self.n_agents * 2:]
-        agent_positions = self.observation[:self.n_agents * 2]
+        #sorted_colleagues = sorted(distances.items(), key=lambda x: x[1])
+        
+        return closest_colleagues[0]
 
+    def potential_function(self, agent_pos: Tuple, ball_position: Tuple, role: int, strategy: int):
+        if strategy == ATTACKING:
+            diamond_positions = self.get_diamond_positions(ball_position)
+            role_target_pos = diamond_positions[role]
+            return cityblock(agent_pos, role_target_pos)
+        elif strategy == DEFENDING:
+            return cityblock(agent_pos, ball_position)
+
+    def role_assignment(self, teammates, roles, ball_position):
         roles_potentials = []
-        for role in self.roles:
+        for role in roles:
             role_potentials = []
-            for agent_id in range(self.n_agents):
-                agent_pos = agent_positions[agent_id * 2], agent_positions[agent_id * 2 + 1]
-                potential = self.potential_function(agent_pos, prey_pos, role)
+            num_of_teammates=len(teammates)
+            for agent_id in range(num_of_teammates):
+                agent_pos = teammates[agent_id]
+                potential = self.potential_function(agent_pos, ball_position, role, ATTACKING)
                 role_potentials.append((agent_id, potential))
             role_potentials.sort(key=lambda x: x[1])
             roles_potentials.append(role_potentials)
@@ -76,10 +86,18 @@ class RoleAgent(Agent):
 
     def action(self) -> int:
 
+        my_position = self.observation[0]
+        ball_position = self.observation[1]
+        score = self.observation[2]
+        agents_position = self.observation[2:2+self.n_agents]
+        opponents_position = self.observation[2+self.n_agents:2+self.n_agents+self.n_opponents]
+
         # Compute potential-based role assignment every `role_assign_period` steps.
         if self.curr_role is None or self.steps_counter % self.role_assign_period == 0:
-            role_assignments = self.role_assignment()
-            self.curr_role = role_assignments[self.agent_id]
+            if self.team == AGENT_TEAM:
+                if self.my_team_has_ball(agents_position, ball_pos):
+                    role_assignments = self.role_assignment(agents_position, self.attack_roles, ball_position)
+                    self.curr_role = role_assignments[self.agent_id]
 
         prey_pos = self.observation[self.n_agents * 2:]
         agent_pos = (self.observation[self.agent_id * 2], self.observation[self.agent_id * 2 + 1])
@@ -87,10 +105,10 @@ class RoleAgent(Agent):
 
         return self.advance_to_pos(agent_pos, prey_pos, self.curr_role)
 
-    def get_prey_adj_locs(self, loc: Tuple) -> List[Tuple]:
-        prey_x = loc[0]
-        prey_y = loc[1]
-        return [(prey_x, prey_y - 1), (prey_x, prey_y + 1), (prey_x - 1, prey_y), (prey_x + 1, prey_y)]
+    def get_diamond_positions(self, ball_position: Tuple) -> List[Tuple]:
+        ball_x = ball_position[0]
+        ball_y = ball_position[1]
+        return [(ball_x-1 , ball_y - 1), (ball_x-1, ball_y + 1), (ball_x - 2, ball_y-2), (ball_x -2, ball_y+2),(ball_x-3, ball_y-3), (ball_x-3, ball_y+3)]
 
     def advance_to_pos(self, agent_pos: Tuple, prey_pos: Tuple, agent_dest: int) -> int:
         """
@@ -141,4 +159,11 @@ class RoleAgent(Agent):
         closest_colleagues = [colleagues_position[i] for i, _ in sorted_opponents[:n_players]]
 
         return closest_colleagues
+
+    def my_team_has_ball(self, team, ball_pos):
+        for teammate_pos in team:
+            if teammate_pos[0] == ball_pos[0] and teammate_pos[1] == ball_pos[1]:
+                return True
+        return False
+
 
