@@ -9,6 +9,7 @@ from environment.rugby_env import RugbyEnv
 from agents.random_agent import RandomAgent
 from agents.dummy_greedy_agent import DummyGreedyAgent
 from agents.greedy_agent import GreedyAgent
+from agents.role_agent import RoleAgent
 
 ROLES = 7
 BALL_CARRIER, RIGHT_SUPPORTER, LEFT_SUPPORTER, RIGHT_SUB_SUPPORTER, LEFT_SUB_SUPPORTER, RIGH_WING, LEFT_WING = range(ROLES)
@@ -55,11 +56,11 @@ if __name__ == '__main__':
   parser.add_argument("--episodes", type=int, default=10)
   parser.add_argument("--n_agents", type=int, default=7)
   parser.add_argument("--n_opponents", type=int, default=7)
-  parser.add_argument("--render-sleep-time", type=float, default=0.5)
+  parser.add_argument("--render-sleep-time", type=float, default=1)
   opt = parser.parse_args()
 
   # Setup the environment
-  env = RugbyEnv(grid_shape=(21,11), n_agents=opt.n_agents, n_opponents=opt.n_opponents, max_steps=1000)
+  env = RugbyEnv(grid_shape=(21,11), n_agents=opt.n_agents, n_opponents=opt.n_opponents, max_steps=100)
 
   # Set seeds.
   random.seed(3)
@@ -69,7 +70,12 @@ if __name__ == '__main__':
   ACTIONS = 6
   DOWN, LEFT, UP, RIGHT, STAY, PASS = range(ACTIONS)
 
-  roles = [BALL_CARRIER, ATTACKER, TACKLER, FORWARD_DEFENSE, BACK_DEFENSE]
+  ROLES = 7
+  BALL_CARRIER, RIGHT_SUPPORTER, LEFT_SUPPORTER, RIGHT_SUB_SUPPORTER, LEFT_SUB_SUPPORTER, RIGH_WING, LEFT_WING = range(ROLES)
+  FORWARD_DEFENDER_1, FORWARD_DEFENDER_2, FORWARD_DEFENDER_3, FORWARD_DEFENDER_4, BACK_DEFENDER_1, BACK_DEFENDER_2, BACK_DEFENDER_3 = range(ROLES)
+  
+  attacking_roles = [BALL_CARRIER, RIGHT_SUPPORTER, LEFT_SUPPORTER, RIGHT_SUB_SUPPORTER, LEFT_SUB_SUPPORTER, RIGH_WING, LEFT_WING]
+  defending_roles = [FORWARD_DEFENDER_1, FORWARD_DEFENDER_2, FORWARD_DEFENDER_3, FORWARD_DEFENDER_4, BACK_DEFENDER_1, BACK_DEFENDER_2, BACK_DEFENDER_3]
 
   random_games = {
     "Random Team vs Random Team": [
@@ -128,7 +134,27 @@ if __name__ == '__main__':
           RandomAgent(id=11, n_actions=env.action_space[11].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=1),
           RandomAgent(id=12, n_actions=env.action_space[12].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=1),
           RandomAgent(id=13, n_actions=env.action_space[13].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=1),
-      ]
+      ],
+      "Roles Team vs Random Team": [
+          # Attacker team
+          RoleAgent(id=0, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=1, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=2, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=3, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=4, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=5, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=6, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          
+
+          # Defensive team
+          RandomAgent(id=7, n_actions=env.action_space[0].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          RandomAgent(id=8, n_actions=env.action_space[1].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          RandomAgent(id=9, n_actions=env.action_space[2].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          RandomAgent(id=10, n_actions=env.action_space[3].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          RandomAgent(id=11, n_actions=env.action_space[4].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          RandomAgent(id=12, n_actions=env.action_space[5].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          RandomAgent(id=13, n_actions=env.action_space[6].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+      ],
   }
 
   dummy_greedy_games = {
@@ -255,30 +281,122 @@ if __name__ == '__main__':
       ]
   }
 
+  roles_games = {
+     "Roles Team vs Random Team": [
+          # Attacker team
+          RoleAgent(id=0, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=1, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=2, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=3, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=4, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=5, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=6, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          
+
+          # Defensive team
+          RandomAgent(id=7, n_actions=env.action_space[0].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          RandomAgent(id=8, n_actions=env.action_space[1].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          RandomAgent(id=9, n_actions=env.action_space[2].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          RandomAgent(id=10, n_actions=env.action_space[3].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          RandomAgent(id=11, n_actions=env.action_space[4].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          RandomAgent(id=12, n_actions=env.action_space[5].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          RandomAgent(id=13, n_actions=env.action_space[6].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+      ],
+
+      "Roles Team vs Dummy Greedy Team": [
+          # Attacker team
+          RoleAgent(id=0, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=1, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=2, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=3, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=4, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=5, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=6, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          
+
+          # Defensive team
+          DummyGreedyAgent(id=7, n_actions=env.action_space[0].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          DummyGreedyAgent(id=8, n_actions=env.action_space[1].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          DummyGreedyAgent(id=9, n_actions=env.action_space[2].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          DummyGreedyAgent(id=10, n_actions=env.action_space[3].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          DummyGreedyAgent(id=11, n_actions=env.action_space[4].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          DummyGreedyAgent(id=12, n_actions=env.action_space[5].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          DummyGreedyAgent(id=13, n_actions=env.action_space[6].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+      ],
+
+      "Roles Team vs  Greedy Team": [
+          # Attacker team
+          RoleAgent(id=0, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=1, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=2, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=3, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=4, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=5, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=6, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          
+
+          # Defensive team
+          GreedyAgent(id=7, n_actions=env.action_space[0].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          GreedyAgent(id=8, n_actions=env.action_space[1].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          GreedyAgent(id=9, n_actions=env.action_space[2].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          GreedyAgent(id=10, n_actions=env.action_space[3].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          GreedyAgent(id=11, n_actions=env.action_space[4].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          GreedyAgent(id=12, n_actions=env.action_space[5].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+          GreedyAgent(id=13, n_actions=env.action_space[6].n, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 1),
+      ],
+      "Roles Team vs Roles Team": [
+         # Attacker team
+          RoleAgent(id=0, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=1, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=2, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=3, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=4, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=5, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=6, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team = 0, attack_roles=attacking_roles, defense_roles=defending_roles),
+
+          # Defensive team
+          RoleAgent(id=7, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=1, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=8, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=1, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=9, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=1, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=10, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=1, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=11, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=1, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=12, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=1, attack_roles=attacking_roles, defense_roles=defending_roles),
+          RoleAgent(id=13, n_agents=opt.n_agents, n_opponents=opt.n_opponents, team=1, attack_roles=attacking_roles, defense_roles=defending_roles),
+      ]
+  }
+
+
   # Evaluate teams
   results = {}
 
-  results_random = {}
-  for game, agents in random_games.items():
-      print(f'Running {game}.')
-      result = run_multi_agent(env, agents, opt.episodes)
-      results_random[game] = result
-  results['Random Team Tournament Performance'] = results_random
+  # results_random = {}
+  # for game, agents in random_games.items():
+  #     print(f'Running {game}.')
+  #     result = run_multi_agent(env, agents, opt.episodes)
+  #     results_random[game] = result
+  # results['Random Team Tournament Performance'] = results_random
 
-  results_dummy_greedy = {}
-  for game, agents in dummy_greedy_games.items():
+  # results_dummy_greedy = {}
+  # for game, agents in dummy_greedy_games.items():
+  #       print(f'Running {game}.')
+  #       result = run_multi_agent(env, agents, opt.episodes)
+  #       results_dummy_greedy[game] = result
+  # results['Dummy Greedy Team Tournament Performance'] = results_dummy_greedy
+
+  # results_greedy = {}
+  # for game, agents in greedy_games.items():
+  #       print(f'Running {game}.')
+  #       result = run_multi_agent(env, agents, opt.episodes)
+  #       results_greedy[game] = result
+  # results['Greedy Team Tournament Performance'] = results_greedy
+
+  results_roles = {}
+  for game, agents in roles_games.items():
         print(f'Running {game}.')
         result = run_multi_agent(env, agents, opt.episodes)
-        results_dummy_greedy[game] = result
-  results['Dummy Greedy Team Tournament Performance'] = results_dummy_greedy
-
-  results_greedy = {}
-  for game, agents in greedy_games.items():
-        print(f'Running {game}.')
-        result = run_multi_agent(env, agents, opt.episodes)
-        results_greedy[game] = result
-  results['Greedy Team Tournament Performance'] = results_greedy
+        results_roles[game] = result
+  results['Roles Team Tournament Performance'] = results_roles
 
   # Compare results
   for name, res in results.items():
-    compare_results(res, title=name, colors=["orange", "blue", "green"])
+    compare_results(res, title=name, colors=["orange", "blue", "green", "gray"])

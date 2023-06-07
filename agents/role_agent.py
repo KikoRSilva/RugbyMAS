@@ -1,5 +1,7 @@
+import math
 import numpy as np
 from typing import List, Tuple
+from scipy.spatial.distance import cityblock
 
 from .base_agent import Agent
 
@@ -17,43 +19,21 @@ BALL_CARRIER, RIGHT_SUPPORTER, LEFT_SUPPORTER, RIGHT_SUB_SUPPORTER, LEFT_SUB_SUP
 
 FORWARD_DEFENDER_1, FORWARD_DEFENDER_2, FORWARD_DEFENDER_3, FORWARD_DEFENDER_4, BACK_DEFENDER_1, BACK_DEFENDER_2, BACK_DEFENDER_3 = range(ROLES)
 
+DISTANCE_BETWEEN_LINES = 5
 
 class RoleAgent(Agent):
 
-    def __init__(self, agent_id: int, n_agents: int, roles: List, team: int, attack_roles: List, defense_roles: List, role_assign_period: int = 1):
+    def __init__(self, id: int, n_agents: int, n_opponents: int, team: int, attack_roles: List, defense_roles: List, role_assign_period: int = 1):
         super(RoleAgent, self).__init__(f"Role-based Agent")
-        self.agent_id = agent_id
+        self.id = id
         self.n_agents = n_agents
+        self.n_opponents = n_opponents
         self.role_assign_period = role_assign_period
         self.curr_role = None
         self.steps_counter = 0
         self.team = team
         self.attack_roles= attack_roles
         self.defense_roles=defense_roles
-
-    def nearest_to_the_left(self, my_position, colleagues_position):
-        """
-        We are x2 and we may be in "p" and just in 1 of these ps.
-        x1 corresponds to our nearest colleague
-        | p | p | p |  p |
-        ------------------
-        | O | O | x1 | O |
-        ------------------
-        | O | O | O  | O |
-
-        """
-        distances = {}
-        colleagues_at_the_left = []
-        for i, colleague_position in enumerate(colleagues_position):
-            if colleague_position[1]<= my_position[1]:
-                return None
-
-        #for i, coleague_pos in enumerate(colleagues_position):
-        #    distances[i] = cityblock(my_position, coleague_pos)
-
-        #sorted_colleagues = sorted(distances.items(), key=lambda x: x[1])
-        
-        return closest_colleagues[0]
 
     def potential_function(self, agent_pos: Tuple, ball_position: Tuple, role: int, strategy: int):
         if strategy == ATTACKING:
@@ -63,19 +43,20 @@ class RoleAgent(Agent):
         elif strategy == DEFENDING:
             return cityblock(agent_pos, ball_position)
 
-    def role_assignment(self, teammates, roles, ball_position):
+    def role_assignment(self, teammates, roles, ball_position, strategy):
         roles_potentials = []
         for role in roles:
             role_potentials = []
-            num_of_teammates=len(teammates)
-            for agent_id in range(num_of_teammates):
-                agent_pos = teammates[agent_id]
-                potential = self.potential_function(agent_pos, ball_position, role, ATTACKING)
-                role_potentials.append((agent_id, potential))
+            teammates_length=len(teammates)
+            for teammate_i in range(teammates_length):
+                teammate_pos = teammates[teammate_i]
+                potential = self.potential_function(teammate_pos, ball_position, role, strategy)
+                role_potentials.append((teammate_i, potential))
             role_potentials.sort(key=lambda x: x[1])
             roles_potentials.append(role_potentials)
 
-        assigned_roles = [-1] * self.n_agents
+        print(roles_potentials)
+        assigned_roles = [-1] * teammates_length
         for role_id, role_potentials in enumerate(roles_potentials):
             for agent_id, _ in role_potentials:
                 if assigned_roles[agent_id] == -1:
@@ -94,76 +75,135 @@ class RoleAgent(Agent):
 
         # Compute potential-based role assignment every `role_assign_period` steps.
         if self.curr_role is None or self.steps_counter % self.role_assign_period == 0:
-            if self.team == AGENT_TEAM:
-                if self.my_team_has_ball(agents_position, ball_pos):
-                    role_assignments = self.role_assignment(agents_position, self.attack_roles, ball_position)
-                    self.curr_role = role_assignments[self.agent_id]
+           
+            print('My id: ' + str(self.id) + '__ My Current ROle is: ' + str(self.curr_role))
 
-        prey_pos = self.observation[self.n_agents * 2:]
-        agent_pos = (self.observation[self.agent_id * 2], self.observation[self.agent_id * 2 + 1])
+            if self.my_team_has_ball(agents_position if self.team == AGENT_TEAM else opponents_position, ball_position):
+                role_assignments = self.role_assignment(agents_position if self.team == AGENT_TEAM else opponents_position, self.attack_roles, ball_position, ATTACKING)
+                self.curr_role = role_assignments[self.id if self.team == AGENT_TEAM else self.id - self.n_agents]
+                print('CURRENT ROLE: ' + str(self.curr_role))
+                if self.curr_role == BALL_CARRIER:
+                    closest_opponents = self.find_closest_players(my_position, opponents_position if self.team == AGENT_TEAM else agents_position, 1)
+                    if self.player_nearby(my_position=my_position, closest_opponent=closest_opponents[0], distance=2):
+                        agent_i = self.find_best_player(agents_position if self.team == AGENT_TEAM else opponents_position, opponents_position if self.team == AGENT_TEAM else agents_position, my_position, AGENT_TEAM if self.team == AGENT_TEAM else OPPONENT_TEAM)
+                        if agent_i is not None:
+                            action = (PASS, agent_i)
+                        else:
+                            action = (DOWN if self.team == AGENT_TEAM else UP, None)
+                    else:
+                        action = (DOWN if self.team == AGENT_TEAM else UP, None)
+                else:
+                    # is teammate
+                    action = self.advance_to_pos(my_position, ball_position, self.curr_role, ATTACKING)
+            
+            else:
+                role_assignments = self.role_assignment(agents_position if self.team == AGENT_TEAM else opponents_position, self.defense_roles, ball_position, DEFENDING)
+                self.curr_role = role_assignments[self.id if self.team == AGENT_TEAM else self.id - self.n_agents]
+                # is defender or teammate
+                action = self.advance_to_pos(my_position, ball_position, self.curr_role, DEFENDING)
+
         self.steps_counter += 1
+        print('My id: ' + str(self.id) + ' ACTION' + action.__str__())
+        print('--------------------------------------')
 
-        return self.advance_to_pos(agent_pos, prey_pos, self.curr_role)
+        return action
+
+    def find_best_player(self, teammates, opponents, my_position, team):
+        angles = {}
+        teammate_i = None
+
+        for teammate_i, teammate_pos in enumerate(teammates):
+            closest_two_opponents = self.find_closest_players(teammate_pos, opponents, 2)
+            angles[teammate_i] = self.calculate_angle(my_position=teammate_pos, agent1_position=closest_two_opponents[0], agent2_position=closest_two_opponents[1])
+
+                
+        sorted_angles = sorted(angles.items(), key=lambda x: x[1])
+        if team == AGENT_TEAM:
+            for i, _ in sorted_angles:
+                if teammates[i][0] <= my_position[0]:
+                    return i
+            return None
+
+        else:
+            for i,_ in sorted_angles:
+                if teammates[i][0] >=  my_position[0]:
+                    return i
+            return None
+
+
+    
+    def calculate_angle(self, my_position, agent1_position, agent2_position):
+        angle1 = math.degrees(math.atan2(agent1_position[1] - my_position[1], agent1_position[0] - my_position[0]))
+        angle2 = math.degrees(math.atan2(agent2_position[1] - my_position[1], agent2_position[0] - my_position[0]))
+        return angle1, angle2
 
     def get_diamond_positions(self, ball_position: Tuple) -> List[Tuple]:
         ball_x = ball_position[0]
         ball_y = ball_position[1]
-        return [(ball_x-1 , ball_y - 1), (ball_x-1, ball_y + 1), (ball_x - 2, ball_y-2), (ball_x -2, ball_y+2),(ball_x-3, ball_y-3), (ball_x-3, ball_y+3)]
 
-    def advance_to_pos(self, agent_pos: Tuple, prey_pos: Tuple, agent_dest: int) -> int:
-        """
-        Choose movement action to advance agent towards the destination around prey
-
-        :param agent_pos: current agent position
-        :param prey_pos: prey position
-        :param agent_dest: agent destination in relation to prey (0 for NORTH, 1 for SOUTH,
-                            2 for WEST, and 3 for EAST)
-
-        :return: movement index
-        """
-
-        def _move_vertically(distances) -> int:
-            if distances[1] > 0:
-                return DOWN
-            elif distances[1] < 0:
-                return UP
-            else:
-                return STAY
-
-        def _move_horizontally(distances) -> int:
-            if distances[0] > 0:
-                return RIGHT
-            elif distances[0] < 0:
-                return LEFT
-            else:
-                return STAY
-
-        prey_adj_locs = self.get_prey_adj_locs(prey_pos)
-        distance_dest = np.array(prey_adj_locs[agent_dest]) - np.array(agent_pos)
-        abs_distances = np.absolute(distance_dest)
-        if abs_distances[0] > abs_distances[1]:
-            return _move_horizontally(distance_dest)
-        elif abs_distances[0] < abs_distances[1]:
-            return _move_vertically(distance_dest)
+        if self.team == AGENT_TEAM:
+            return [(ball_x, ball_y), (ball_x - 1 , ball_y - 1), (ball_x - 1, ball_y + 1), (ball_x - 2, ball_y - 2), (ball_x - 2, ball_y + 2), (ball_x - 3, ball_y - 3), (ball_x - 3, ball_y + 3)]
         else:
-            roll = np.random.uniform(0, 1)
-            return _move_horizontally(distance_dest) if roll > 0.5 else _move_vertically(d)
+            return [(ball_x, ball_y), (ball_x + 1 , ball_y - 1), (ball_x + 1, ball_y + 1), (ball_x + 2, ball_y - 2), (ball_x + 2, ball_y + 2), (ball_x + 3, ball_y - 3), (ball_x + 3, ball_y + 3)]
+    
+    def player_nearby(self, my_position, closest_opponent, distance):
+        return abs(my_position[0]-closest_opponent[0]) + abs(my_position[1]-closest_opponent[1]) <= distance
 
-    def find_closest_colleagues(self, my_position, colleagues_position, n_players):
+
+    def find_closest_players(self, my_position, opponent_positions, n_players):
         distances = {}
 
-        for i, coleague_pos in enumerate(colleagues_position):
-            distances[i] = cityblock(my_position, coleague_pos)
+        for i, opponent_pos in enumerate(opponent_positions):
+            distances[i] = cityblock(my_position, opponent_pos)
 
-        sorted_colleagues = sorted(distances.items(), key=lambda x: x[1])
-        closest_colleagues = [colleagues_position[i] for i, _ in sorted_opponents[:n_players]]
+        sorted_opponents = sorted(distances.items(), key=lambda x: x[1])
+        closest_opponents = [opponent_positions[i] for i, _ in sorted_opponents[:n_players]]
 
-        return closest_colleagues
+        return closest_opponents
+
+    def advance_to_pos(self, my_position: Tuple, ball_position: Tuple, role: int, strategy: int) -> Tuple:
+            
+        if strategy == ATTACKING:
+
+            diamond_positions = self.get_diamond_positions(ball_position)
+            print('I should go to: ' + diamond_positions[role].__str__())
+            return self.go_toward_position(my_position, diamond_positions[role])
+            
+        elif strategy == DEFENDING:
+
+            if role <= 3:
+                return self.go_toward_position(my_position, ball_position)
+            else:
+                # stay 4 block behind the forwards line
+                if self.team == AGENT_TEAM:
+                    return self.go_toward_position(my_position, (ball_position[0] - DISTANCE_BETWEEN_LINES, ball_position[1]))
+                elif self.team == OPPONENT_TEAM:
+                    return self.go_toward_position(my_position, (ball_position[0] + DISTANCE_BETWEEN_LINES, ball_position[1]))
 
     def my_team_has_ball(self, team, ball_pos):
         for teammate_pos in team:
             if teammate_pos[0] == ball_pos[0] and teammate_pos[1] == ball_pos[1]:
                 return True
         return False
+    
+    def go_toward_position(self, my_position, dest_position):
+        my_pos_x, my_pos_y = my_position
+        dest_x, dest_y = dest_position
+
+        if my_pos_x == dest_x and my_pos_y == dest_y:
+            return (STAY, None)
+        
+        dx = dest_x - my_pos_x
+        dy = dest_y - my_pos_y
+
+        if abs(dx) > abs(dy):
+            if dy > 0:
+                return (UP, None)
+            
+            return (DOWN, None)
+        else:
+            if dx > 0:
+                return (LEFT, None)
+            return (RIGHT, None)
 
 
