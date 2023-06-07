@@ -10,9 +10,13 @@ from agents.random_agent import RandomAgent
 from agents.dummy_greedy_agent import DummyGreedyAgent
 from agents.greedy_agent import GreedyAgent
 
-ROLES = 5
-BALL_CARRIER, ATTACKER, TACKLER, FORWARD_DEFENSE, BACK_DEFENSE = range(ROLES)
+ROLES = 7
+BALL_CARRIER, RIGHT_SUPPORTER, LEFT_SUPPORTER, RIGHT_SUB_SUPPORTER, LEFT_SUB_SUPPORTER, RIGH_WING, LEFT_WING = range(ROLES)
 
+
+# 2 prox da bola -> supporters;
+# 1 prox do supporters -> sub-supporters
+# 1 mais próximo das primeiras 3 linhas -> winger left/right
 def run_multi_agent(environment, agents, n_episodes):
 
   results = np.zeros(n_episodes)
@@ -64,10 +68,6 @@ if __name__ == '__main__':
 
   ACTIONS = 6
   DOWN, LEFT, UP, RIGHT, STAY, PASS = range(ACTIONS)
-  conventions = {
-     'attack': [[0, 1, 2, 3, 4, 5, 6], []],
-     'defense': [[0, 1, 2, 3, 4, 5, 6], []]
-  }
 
   roles = [BALL_CARRIER, ATTACKER, TACKLER, FORWARD_DEFENSE, BACK_DEFENSE]
 
