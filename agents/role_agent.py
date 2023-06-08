@@ -55,7 +55,6 @@ class RoleAgent(Agent):
             role_potentials.sort(key=lambda x: x[1])
             roles_potentials.append(role_potentials)
 
-        print(roles_potentials)
         assigned_roles = [-1] * teammates_length
         for role_id, role_potentials in enumerate(roles_potentials):
             for agent_id, _ in role_potentials:
@@ -73,16 +72,20 @@ class RoleAgent(Agent):
         agents_position = self.observation[2:2+self.n_agents]
         opponents_position = self.observation[2+self.n_agents:2+self.n_agents+self.n_opponents]
 
+        print('Ball position: ' + str(ball_position))
+
         # Compute potential-based role assignment every `role_assign_period` steps.
         if self.curr_role is None or self.steps_counter % self.role_assign_period == 0:
            
-            print('My id: ' + str(self.id) + '__ My Current ROle is: ' + str(self.curr_role))
+            if self.id == 5:
+                print('My Current ROle is: ' + str(self.curr_role))
 
             if self.my_team_has_ball(agents_position if self.team == AGENT_TEAM else opponents_position, ball_position):
                 role_assignments = self.role_assignment(agents_position if self.team == AGENT_TEAM else opponents_position, self.attack_roles, ball_position, ATTACKING)
                 self.curr_role = role_assignments[self.id if self.team == AGENT_TEAM else self.id - self.n_agents]
-                print('CURRENT ROLE: ' + str(self.curr_role))
+                print('CURRENT ROLE: ' + str(self.curr_role) + ' and ball carrier = ' + str(BALL_CARRIER))
                 if self.curr_role == BALL_CARRIER:
+                    print('I AM THE BOSS')
                     closest_opponents = self.find_closest_players(my_position, opponents_position if self.team == AGENT_TEAM else agents_position, 1)
                     if self.player_nearby(my_position=my_position, closest_opponent=closest_opponents[0], distance=2):
                         agent_i = self.find_best_player(agents_position if self.team == AGENT_TEAM else opponents_position, opponents_position if self.team == AGENT_TEAM else agents_position, my_position, AGENT_TEAM if self.team == AGENT_TEAM else OPPONENT_TEAM)
@@ -138,11 +141,38 @@ class RoleAgent(Agent):
         return angle1, angle2
 
     def get_diamond_positions(self, ball_position: Tuple) -> List[Tuple]:
+
+        def _validate_vertical_position(x, dx):
+            next_x = x + dx
+            if next_x < 0:
+                return next_x + 1
+            elif next_x > 10:
+                return next_x - 1
+            else:
+                return next_x
+            
+        def _validate_horizontal_position(y, dy):
+            next_y = y + dy
+            if next_y < 0:
+                return next_y + 1
+            elif next_y > 20:
+                return next_y - 1
+            else:
+                return next_y
+
         ball_x = ball_position[0]
         ball_y = ball_position[1]
 
+        ball_carrier = ball_position
+        supporter_left = (_validate_vertical_position(ball_x, -1), _validate_horizontal_position(ball_y, -1))
+        supporter_right = (_validate_vertical_position(ball_x, -1), _validate_horizontal_position(ball_y, 1))
+        sub_supporter_left = (_validate_vertical_position(ball_x, -2), _validate_horizontal_position(ball_y, -2))
+        sub_supporter_right = (_validate_vertical_position(ball_x, -2), _validate_horizontal_position(ball_y, 2))
+        winger_left = (_validate_vertical_position(ball_x, -3), _validate_horizontal_position(ball_y, -3))
+        winger_right = (_validate_vertical_position(ball_x, -3), _validate_horizontal_position(ball_y, 3))
+
         if self.team == AGENT_TEAM:
-            return [(ball_x, ball_y), (ball_x - 1 , ball_y - 1), (ball_x - 1, ball_y + 1), (ball_x - 2, ball_y - 2), (ball_x - 2, ball_y + 2), (ball_x - 3, ball_y - 3), (ball_x - 3, ball_y + 3)]
+            return [ball_carrier, supporter_left, supporter_right, sub_supporter_left, sub_supporter_right, winger_left, winger_right]
         else:
             return [(ball_x, ball_y), (ball_x + 1 , ball_y - 1), (ball_x + 1, ball_y + 1), (ball_x + 2, ball_y - 2), (ball_x + 2, ball_y + 2), (ball_x + 3, ball_y - 3), (ball_x + 3, ball_y + 3)]
     
@@ -166,7 +196,6 @@ class RoleAgent(Agent):
         if strategy == ATTACKING:
 
             diamond_positions = self.get_diamond_positions(ball_position)
-            print('I should go to: ' + diamond_positions[role].__str__())
             return self.go_toward_position(my_position, diamond_positions[role])
             
         elif strategy == DEFENDING:
@@ -189,6 +218,9 @@ class RoleAgent(Agent):
     def go_toward_position(self, my_position, dest_position):
         my_pos_x, my_pos_y = my_position
         dest_x, dest_y = dest_position
+        print('My role is: ' + str(self.curr_role) + ' and I want to go to: ' + str(dest_position))
+        print('My position: x=' + my_pos_x.__str__() + ';y=' + my_pos_y.__str__())
+        print('Dest position: x=' + dest_x.__str__() + ';y=' + dest_y.__str__())
 
         if my_pos_x == dest_x and my_pos_y == dest_y:
             return (STAY, None)
@@ -196,14 +228,19 @@ class RoleAgent(Agent):
         dx = dest_x - my_pos_x
         dy = dest_y - my_pos_y
 
-        if abs(dx) > abs(dy):
-            if dy > 0:
-                return (UP, None)
-            
-            return (DOWN, None)
-        else:
+        if abs(dx) >= abs(dy):
             if dx > 0:
+                return (DOWN, None)
+            elif dy == 0:
+                return (STAY, None)
+            else:
+                return (UP, None)
+        else:
+            if dy > 0:
+                return (RIGHT, None)
+            elif dy == 0:
+                return (STAY, None)
+            else:
                 return (LEFT, None)
-            return (RIGHT, None)
 
 

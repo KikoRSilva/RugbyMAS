@@ -299,13 +299,13 @@ class RugbyEnv(gym.Env):
 
     def __identify_agent(self, pos):
         for agent_i, agent_pos in self.agent_pos.items():
-            if agent_pos == pos:
+            if agent_pos[0] == pos[0] and agent_pos[1] == pos[1]:
                 return agent_i
         return None
 
     def __identify_opponent(self, pos):
         for opponent_i, opponent_pos in self.opponents_pos.items():
-            if opponent_pos == pos:
+            if opponent_pos[0] == pos[0] and opponent_pos[1] == pos[1]:
                 return opponent_i
         return None
 

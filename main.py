@@ -34,6 +34,7 @@ def run_multi_agent(environment, agents, n_episodes):
         for observations, agent in zip(observations, agents):
           agent.see(observations)
         actions = [agent.action() for agent in agents]
+        print('ACTIONS: ' + actions.__str__())
         next_observations, rewards, terminals, info = environment.step(actions)
 
         environment.render()
