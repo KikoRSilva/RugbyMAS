@@ -43,6 +43,7 @@ class RugbyEnv(gym.Env):
         self._score_try_reward = score_try_reward
         self.team_scores = (0, 0)
         self._n_tackles = 0
+        self._n_passes = 0
 
         self.action_space = MultiAgentActionSpace(
             [spaces.Discrete(6) for _ in range(self.n_agents + self.n_opponents)]
@@ -105,6 +106,7 @@ class RugbyEnv(gym.Env):
         self._players_done = [False for _ in range(self.n_agents + self.n_opponents)]
         self._team_scores = (0, 0)
         self._n_tackles = 0
+        self._n_passes = 0
         self._step_count = 0
         self.__draw_base_img()
 
@@ -201,7 +203,7 @@ class RugbyEnv(gym.Env):
             observations,
             rewards,
             self._players_done,
-            {"score": self._team_scores, "n_tackles": self._n_tackles},
+            {"score": self._team_scores, "n_tackles": self._n_tackles, "n_passes": self._n_passes},
         )
 
     def __update_agent_pos(self, agent_i, action):
@@ -252,6 +254,7 @@ class RugbyEnv(gym.Env):
         # pass or stay
         else:
             if pass_the_ball:
+                self._n_passes += 1
                 self.ball_pos = self.agent_pos[action[1]]
                 self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS["agent"] + str(
                     agent_i + 1
@@ -325,6 +328,7 @@ class RugbyEnv(gym.Env):
         # pass or stay
         else:
             if pass_the_ball:
+                self._n_passes += 1
                 self.ball_pos = self.opponents_pos[action[1]]
                 self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS["opponent"] + str(
                     opponent_i + 1

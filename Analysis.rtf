@@ -1,0 +1,116 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2639
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica-Bold;\f1\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww37860\viewh8840\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\b\fs24 \cf0 Random Tournament\
+\
+
+\f1\b0 In order to evaluate the Random Agents Team performance, we had to increase the number of maximum steps to 1000 and started the Random Agent Team as defenders. This way, we could analyze the real difference between the metrics of each game. This is an indicative that the algorithm is not the best.\
+\
+
+\f0\b 	random vs random
+\f1\b0 \
+If the agent is the ball carrier, his actions have 20% of probability to be chosen, else they have 25% of probability. This will lead to having teammates in front of the ball carrier (invalid players), it cannot pass the ball to them. This framework will reduce the number of passes, as we expected to be a lot more because of the number of steps it takes per episode.\
+\
+	
+\f0\b dummy greedy vs random\
+
+\f1\b0 We start to see that the number of steps decreased a lot because of the \'93greedy\'94 algorithm (if the agent is the ball carrier and has space to go, goes toward the try line else pass; if the agent is not the ball carrier choses a random action). Now the agent does a more intelligent decision considering the environment, so the number of passes increase once it has notion of when to pass and the number of tackles decreased because of the ball carrier awareness.\
+\
+	
+\f0\b greedy vs random\
+
+\f1\b0 The greedy has a similar approach to the dummy greedy algorithm, but has some improvements. When passing the ball, it chooses the team mate in the best position to reach the goal. This reduces the number of passes and steps. As the greedy algorithms are very good attacking, the number of tackles will be lower than any other approach.\
+\
+	
+\f0\b roles vs random\
+
+\f1\b0 If the assigned roles are rigid and do not allow for adaptation to new situations or unforeseen challenges, the system's quality suffers. Agents struggle to adjust their roles in response to changing conditions, leading to suboptimal performance. So the number of steps increases, comparing with the greedy algorithms.\
+The agents take into consideration the ball carrier in order to choose the position to adopt (according to each role) at time step t, but at time step t the ball carrier already chose if it will either pass or go to other position and so makes a discrepancy of 1 time step between the roles that each agent should adopt. To resolve this, this would involve creating an algorithm that detects which would be the action done by the ball carrier and adapt the behaviour of each agent depending of its role.\
+\
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\b \cf0 Dummy Greedy Tournament\
+\
+
+\f1\b0 In order to evaluate the Dummy Greedy Agents Team performance, we started the Dummy Greedy Agent Team as defenders. When defending the agent chooses random action.\
+\
+
+\f0\b 	random vs dummy greedy
+\f1\b0 \
+Both agent teams take random actions, so the numbers of steps will increase, but the number of tackles will be lowest comparing with the other teams.\
+\
+	
+\f0\b dummy greedy vs dummy greedy\
+
+\f1\b0 We start by seeing the number of passes increases since the team mates are not in the best positions for attacking the defence line, also the number of tackles is higher than then in the Random approach because the agents tend to attack more (go towards the try area, where there are more opponents).\
+\
+	
+\f0\b greedy vs dummy greedy\
+
+\f1\b0 Greedy Agents have a better defence strategy than the Dummy Greedy Agents, they chase the ball carrier. This strategy will increase the number of tackles, then obviously the number of steps per team will increase as well. The number of passes is the lowest because they tend to pass to the teammate who in the best position to reach the goal.\
+\
+	
+\f0\b roles vs dummy greedy\
+
+\f1\b0 Role Agents rely on the information taken from the environment, in our case the ball carrier. In our scenario the agents cannot share the same position, and so we noticed that in the case the ball carrier needs to pass the ball by having an opponent too close it will change drastically the roles. The volatility of the roles change when a pass is done causes the agents to block themselves as they get into conflict when going to their new roles. As a consequence the number of steps will increase and the scenarios where the combination of actions generates PASSES and TACKLES increases as well. The imposition of rules in order to each agent get in his role position assigned on the diamond limits the agents behaviour and turns out the system to be defective, that is justified by lack of flexibility (roles restrict flexibility of movement for each agent), and dependency on a agent that may vary dramatically in a single time step (the ball carrier).\
+\
+\
+
+\f0\b Greedy Tournament\
+\
+
+\f1\b0 In order to evaluate the Greedy Agents Team performance, we started the Greedy Agent Team as defenders. When defending the agent go towards the ball carrier.\
+\
+
+\f0\b 	random vs greedy
+\f1\b0 \
+The Random Agents passes the ball randomly so it might makes the Greedy Agents do more steps to tackle the ball carrier if the passes are done to players spread around the field. This behaviour will lead to less number of tackles and more steps comparing to other tournaments, because it is more difficult to reach the ball carrier.\
+\
+	
+\f0\b dummy greedy vs greedy\
+
+\f1\b0 Dummy Greedy Agents pass the ball to the nearest teammate, the tackles still exists because they do not take in consideration the opponents position. As far as the tackles exists, the number of steps is bigger comparing to other approaches. The Greedy Agents have the best defence strategy overall so the Dummy Greedy Agents will pass more the ball to avoid being tackled.\
+\
+	
+\f0\b greedy vs greedy\
+
+\f1\b0 Overall with the data that we have collected, the greedy approach shows to have a better attack than defence strategy, this leaves us with the opinion that the defence algorithm can be improved in the future. As we can see the steps and passes are minimal to reach the goal because there are no tackles proving that our attack algorithm was perfect applied to our environment details.\
+\
+	
+\f0\b roles vs greedy\
+
+\f1\b0 Looking to the three graphs we can observe that the episodes finish reaching the maximum steps possible, there are no tackles and very few passes made. The reason behind this is that role-based agents tends to enter in conflict (because of the volatility from the roles changes during the first passes) too early. The Greedy Agents go towards the ball carrier, they converge to the same position, but since the ball carrier is blocked by the teammates it is not reachable to get tackled. The teammates have no notion that they are being blocked by the other colleagues, and so they keep choosing the same action even being impossible to move themselves to positions of the desired role. This will block the entire environment.\
+There is an improvement opportunity here, the agents should have notion that action they are taking has no effect and so an algorithm for this situation must be developed.\
+\
+\
+
+\f0\b Roles Tournament\
+\
+
+\f1\b0 In order to evaluate the Role-based Agents Team performance, we started the Role-based Agents Team as defenders. When defending there is a forward line with 4 agents and a backward line with 3 agents.\
+\
+
+\f0\b 	random vs roles
+\f1\b0 \
+The Random Agents passes the ball randomly so it might makes the Role-based Agents do more steps to tackle the ball carrier if the passes are done to players spread around the field. This behaviour will lead to less number of tackles and more steps, because it is more difficult to reach the ball carrier. Comparing with Greedy Team Tournament, there are more steps because the first defence line is smaller than the Greedy one.\
+\
+	
+\f0\b dummy greedy vs roles\
+
+\f1\b0 Dummy Greedy Agents pass the ball to the nearest teammate, the tackles still exists because they do not take in consideration the opponents position. As far as the tackles exists, the number of steps is bigger comparing to other approaches. The Greedy Agents have the best defence strategy overall so the Dummy Greedy Agents will pass more the ball to avoid being tackled. Comparing with Greedy Team Tournament, there are more steps because the first defence line is smaller than the Greedy one.\
+\
+	
+\f0\b greedy vs roles\
+
+\f1\b0 Overall with the data that we have collected, the greedy approach shows to have a better attack than defence strategy, this leaves us with the opinion that the defence algorithm can be improved in the future. As we can see the steps and passes are minimal to reach the goal because there are no tackles proving that our attack algorithm was perfect applied to our environment details.\
+\
+	
+\f0\b roles vs roles\
+
+\f1\b0 Looking to the three graphs we can observe that the episodes finish reaching the maximum steps possible, there are no tackles and very few passes made. The reason behind this is that role-based agents tends to enter in conflict (because of the volatility from the roles changes during the first passes) too early. The Role-based Agents go towards the ball carrier, they converge to the same position, but since the ball carrier is blocked by the teammates it is not reachable to get tackled. The teammates have no notion that they are being blocked by the other colleagues, and so they keep choosing the same action even being impossible to move themselves to positions of the desired role. This will block the entire environment.\
+There is an improvement opportunity here, the agents should have notion that action they are taking has no effect and so an algorithm for this situation must be developed.}
