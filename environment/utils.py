@@ -17,11 +17,7 @@ def z_table(confidence):
     -------
         The z-value for the confidence level given.
     """
-    return {
-        0.99: 2.576,
-        0.95: 1.96,
-        0.90: 1.645
-    }[confidence]
+    return {0.99: 2.576, 0.95: 1.96, 0.90: 1.645}[confidence]
 
 
 def confidence_interval(mean, n, confidence):
@@ -62,7 +58,20 @@ def standard_error(std_dev, n, confidence):
     return z_table(confidence) * (std_dev / math.sqrt(n))
 
 
-def plot_confidence_bar(names, means, std_devs, N, title, x_label, y_label, confidence, show=False, filename=None, colors=None, yscale=None):
+def plot_confidence_bar(
+    names,
+    means,
+    std_devs,
+    N,
+    title,
+    x_label,
+    y_label,
+    confidence,
+    show=False,
+    filename=None,
+    colors=None,
+    yscale=None,
+):
     """Creates a bar plot for comparing different agents/teams.
 
     Parameters
@@ -97,7 +106,16 @@ def plot_confidence_bar(names, means, std_devs, N, title, x_label, y_label, conf
     errors = [standard_error(std_devs[i], N[i], confidence) for i in range(len(means))]
     fig, ax = plt.subplots()
     x_pos = np.arange(len(names))
-    ax.bar(x_pos, means, yerr=errors, align='center', alpha=0.5, color=colors if colors is not None else "gray", ecolor='black', capsize=10)
+    ax.bar(
+        x_pos,
+        means,
+        yerr=errors,
+        align="center",
+        alpha=0.5,
+        color=colors if colors is not None else "gray",
+        ecolor="black",
+        capsize=10,
+    )
     ax.set_ylabel(y_label)
     ax.set_xlabel(x_label)
     ax.set_xticks(x_pos)
@@ -114,25 +132,30 @@ def plot_confidence_bar(names, means, std_devs, N, title, x_label, y_label, conf
     plt.close()
 
 
-def compare_results(results, confidence=0.95, title="Agents Comparison", metric="Steps Per Episode", colors=None):
-
+def compare_results(
+    results,
+    confidence=0.95,
+    title="Agents Comparison",
+    metric="Steps Per Episode",
+    colors=None,
+):
     """Displays a bar plot comparing the performance of different agents/teams.
 
-        Parameters
-        ----------
+    Parameters
+    ----------
 
-        results: dict
-            A dictionary where keys are the names and the values sequences of trials
-        confidence: float
-            The confidence level for the confidence interval
-        title: str
-            The title of the plot
-        metric: str
-            The name of the metric for comparison
-        colors: Sequence[str]
-            A sequence of colors (one for each agent/team)
+    results: dict
+        A dictionary where keys are the names and the values sequences of trials
+    confidence: float
+        The confidence level for the confidence interval
+    title: str
+        The title of the plot
+    metric: str
+        The name of the metric for comparison
+    colors: Sequence[str]
+        A sequence of colors (one for each agent/team)
 
-        """
+    """
 
     names = list(results.keys())
     means = [result.mean() for result in results.values()]
@@ -145,9 +168,33 @@ def compare_results(results, confidence=0.95, title="Agents Comparison", metric=
         std_devs=stds,
         N=N,
         title=title,
-        x_label="", y_label=f"Avg. {metric}",
-        confidence=confidence, show=True, colors=colors
+        x_label="",
+        y_label=f"Avg. {metric}",
+        confidence=confidence,
+        show=True,
+        colors=colors,
     )
+    
+def compare_scores(game_results):
+    for tournament, results in game_results.items():
+        plt.figure(figsize=(10, 6))
+        game_names = list(results.keys())
+        outcomes = []
+        for game_name, game_data in results.items():
+            vs_teams = split_by_vs(game_name)
+            team_1_outcomes = sum([outcome == (5, 0) for outcome in game_data])
+            team_2_outcomes = len(game_data) - team_1_outcomes
+            outcomes.append((team_1_outcomes, team_2_outcomes))
+            plt.bar(vs_teams, [team_1_outcomes, team_2_outcomes])
+
+        plt.xlabel('Teams')
+        plt.ylabel('Outcomes')
+        plt.title(tournament + ' - Game Results')
+        plt.legend(game_names)
+        plt.show()
 
 
-
+    
+def split_by_vs(string):
+    parts = string.split('vs')
+    return parts[0].strip(), parts[1].strip()

@@ -12,7 +12,7 @@ class Agent(ABC):
     ----------
     name: str
         Name for identification purposes.
-        
+
     observation: np.ndarray
        The most recent observation of the environment
 
